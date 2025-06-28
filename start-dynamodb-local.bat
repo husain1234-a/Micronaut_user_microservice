@@ -1,0 +1,3 @@
+@echo off
+echo Starting DynamoDB Local...
+java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb 
