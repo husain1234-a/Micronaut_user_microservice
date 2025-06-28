@@ -42,3 +42,10 @@
 2025-06-28 15:23:06 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@1f4fc6ab] | Timestamp: 1751104386506
 2025-06-28 15:28:04 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.updateUser | Args: [3222eafc-6bc0-460b-b528-eb8738b4774e, com.yash.usermanagement.model.User@59a2e4bc] | Timestamp: 1751104684371
 2025-06-28 15:29:20 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.deleteUser | Args: [3222eafc-6bc0-460b-b528-eb8738b4774e] | Timestamp: 1751104760758
+2025-06-28 16:52:38 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@13cc55a5] | Timestamp: 1751109758837
+2025-06-28 16:55:31 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@45fb2e49] | Timestamp: 1751109931158
+2025-06-28 16:57:05 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@3eb69936] | Timestamp: 1751110025531
+2025-06-28 16:58:13 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@1b34c22a] | Timestamp: 1751110093313
+2025-06-28 17:02:55 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@419c7d11] | Timestamp: 1751110375418
+2025-06-28 17:03:36 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@aee5a36] | Timestamp: 1751110416559
+2025-06-28 17:04:12 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@656af014] | Timestamp: 1751110452741

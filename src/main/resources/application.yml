@@ -135,4 +135,4 @@ firebase:
 
 notification:
   service:
-    url: http://localhost:8081
+    url: http://localhost:9000
