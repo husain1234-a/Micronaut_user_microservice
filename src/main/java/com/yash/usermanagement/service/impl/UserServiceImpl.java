@@ -256,7 +256,8 @@ public class UserServiceImpl implements UserService {
 
                                 // Send password change approval notification
                                 try {
-                                    notificationClientService.sendPasswordResetApprovalNotification(user.getId(), user.getEmail());
+                                    notificationClientService.sendPasswordResetApprovalNotification(user.getId(),
+                                            user.getEmail());
                                 } catch (Exception e) {
                                     LOG.error("Failed to send password reset approval email: {}", e.getMessage());
                                 }
@@ -283,28 +284,28 @@ public class UserServiceImpl implements UserService {
             if (!userRepository.existsById(id)) {
                 LOG.warn("User not found with ID: {}", id);
                 throw new ResourceNotFoundException("User not found with ID: " + id);
-            }else{
+            } else {
                 if (!validateCurrentPassword(id, request.getOldPassword())) {
-            throw new ValidationException("Current password is incorrect");
-        }else{
-// Create password change request
-        PasswordChangeRequest passwordChangeRequest = new PasswordChangeRequest();
-        passwordChangeRequest.setUserId(id);
-        passwordChangeRequest.setNewPassword(request.getNewPassword());
-        passwordChangeRequest.setStatus(PasswordChangeStatus.PENDING);
-        passwordChangeRequest.setCreatedAt(LocalDateTime.now());
-        passwordChangeRequestRepository.save(passwordChangeRequest);
-             // Send notification to admin
-            try {
-                notificationClientService.sendPasswordResetRequestNotification(user.getId(), user.getEmail());
-            } catch (Exception e) {
-                LOG.error("Failed to send password reset request email: {}", e.getMessage());
+                    throw new ValidationException("Current password is incorrect");
+                } else {
+                    // Create password change request
+                    PasswordChangeRequest passwordChangeRequest = new PasswordChangeRequest();
+                    passwordChangeRequest.setUserId(id);
+                    passwordChangeRequest.setNewPassword(request.getNewPassword());
+                    passwordChangeRequest.setStatus(PasswordChangeStatus.PENDING);
+                    passwordChangeRequest.setCreatedAt(LocalDateTime.now());
+                    passwordChangeRequestRepository.save(passwordChangeRequest);
+                    // Send notification to admin
+                    try {
+                        notificationClientService.sendPasswordResetRequestNotification(user.getId(), user.getEmail());
+                    } catch (Exception e) {
+                        LOG.error("Failed to send password reset request email: {}", e.getMessage());
+                    }
+                }
             }
-        }
-            }
-        
+
             LOG.info("Password change requested successfully for user with ID: {}", id);
-        
+
         } catch (Exception e) {
             LOG.error("Error requesting password change for user with ID {}: {}", id, e.getMessage(), e);
             throw new DatabaseException("Failed to request password change", e);
@@ -319,7 +320,7 @@ public class UserServiceImpl implements UserService {
             // Verify admin
             User admin = getUserById(request.getAdminId());
             if (admin.getRole() != UserRole.ADMIN) {
-            throw new ValidationException("Only admin can approve password changes");
+                throw new ValidationException("Only admin can approve password changes");
             }
 
             // Get user and password change request
@@ -425,7 +426,8 @@ public class UserServiceImpl implements UserService {
     public List<Map<String, Object>> getAllPendingPasswordChangeRequests() {
         LOG.info("Fetching all pending password change requests");
         try {
-            List<PasswordChangeRequest> pendingRequests = passwordChangeRequestRepository.findByStatus(PasswordChangeStatus.PENDING);
+            List<PasswordChangeRequest> pendingRequests = passwordChangeRequestRepository
+                    .findByStatus(PasswordChangeStatus.PENDING);
             // Map the pending requests to a more suitable format for the response
             return pendingRequests.stream().map(req -> {
                 Map<String, Object> map = new HashMap<>();
@@ -437,19 +439,19 @@ public class UserServiceImpl implements UserService {
                 map.put("createdAt", req.getCreatedAt());
                 map.put("updatedAt", req.getUpdatedAt());
                 try {
-                User user = getUserById(req.getUserId());
-                map.put("userFirstName", user.getFirstName());
-                map.put("userLastName", user.getLastName());
-                map.put("userEmail", user.getEmail());
-            } catch (Exception e) {
-                // User might have been deleted
-                map.put("userFirstName", "");
-                map.put("userLastName", "");
-                map.put("userEmail", "");
-            }
-            return map;
+                    User user = getUserById(req.getUserId());
+                    map.put("userFirstName", user.getFirstName());
+                    map.put("userLastName", user.getLastName());
+                    map.put("userEmail", user.getEmail());
+                } catch (Exception e) {
+                    // User might have been deleted
+                    map.put("userFirstName", "");
+                    map.put("userLastName", "");
+                    map.put("userEmail", "");
+                }
+                return map;
             }).collect(Collectors.toList());
-            
+
         } catch (Exception e) {
             LOG.error("Error fetching all pending password change requests: {}", e.getMessage());
             throw new DatabaseException("Failed to fetch all pending password change requests", e);
@@ -486,7 +488,8 @@ public class UserServiceImpl implements UserService {
             // Here you should use your password hashing mechanism to compare passwords
             // For example, if using BCrypt:
             // return BCrypt.checkpw(currentPassword, user.getPassword());
-            return currentPassword.equals(user.getPassword()); // This is just for example, use proper password hashing in production
+            return currentPassword.equals(user.getPassword()); // This is just for example, use proper password hashing
+                                                               // in production
         } catch (Exception e) {
             LOG.error("Error validating current password for user with ID {}: {}", userId, e.getMessage(), e);
             throw new DatabaseException("Failed to validate current password", e);
@@ -503,7 +506,7 @@ public class UserServiceImpl implements UserService {
         // Check if this token is already registered for this user
         List<UserDevice> existingDevices = userDeviceRepository.findByUserId(user.getId());
         boolean alreadyRegistered = existingDevices.stream()
-            .anyMatch(device -> device.getFcmToken().equals(token));
+                .anyMatch(device -> device.getFcmToken().equals(token));
         if (alreadyRegistered) {
             LOG.info("Token already registered for user: {}", userEmail);
             return;
@@ -526,16 +529,16 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Password change request not found"));
         if (approvalDTO.isApproved()) {
             // Approve: change password, set status, set adminId, set updatedAt
-           changePassword(req.getUserId(), req.getNewPassword());
+            changePassword(req.getUserId(), req.getNewPassword());
             req.setStatus(PasswordChangeStatus.APPROVED);
             req.setAdminId(approvalDTO.getAdminId());
             req.setUpdatedAt(LocalDateTime.now());
             passwordChangeRequestRepository.update(req);
             // Send approval notification
-            
-                User user = getUserById(req.getUserId());
-                notificationClientService.sendPasswordResetApprovalNotification(user.getId(), user.getEmail());
-            
+
+            User user = getUserById(req.getUserId());
+            notificationClientService.sendPasswordResetApprovalNotification(user.getId(), user.getEmail());
+
         } else {
             // Reject: set status, set adminId, set updatedAt
             req.setStatus(PasswordChangeStatus.REJECTED);
@@ -543,10 +546,10 @@ public class UserServiceImpl implements UserService {
             req.setUpdatedAt(LocalDateTime.now());
             passwordChangeRequestRepository.update(req);
             // Send rejection notification
-            
-                User user = getUserById(req.getUserId());
-                notificationClientService.sendPasswordChangeRejectionNotification(user.getId(), user.getEmail());
-            
+
+            User user = getUserById(req.getUserId());
+            notificationClientService.sendPasswordChangeRejectionNotification(user.getId(), user.getEmail());
+
         }
     }
 }

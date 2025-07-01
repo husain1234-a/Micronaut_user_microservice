@@ -7,15 +7,28 @@ public class NotificationRequest {
     private String message;
 
     // Constructors
-    public NotificationRequest() {}
+    public NotificationRequest() {
+    }
+
     public NotificationRequest(String recipient, String message) {
         this.recipient = recipient;
         this.message = message;
     }
 
     // Getters and setters
-    public String getRecipient() { return recipient; }
-    public void setRecipient(String recipient) { this.recipient = recipient; }
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public String getRecipient() {
+        return recipient;
+    }
+
+    public void setRecipient(String recipient) {
+        this.recipient = recipient;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }
