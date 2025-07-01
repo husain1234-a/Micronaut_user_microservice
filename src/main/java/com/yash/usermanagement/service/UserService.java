@@ -5,11 +5,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.yash.usermanagement.dto.UserDeviceDto;
 import com.yash.usermanagement.model.User;
 
 import com.yash.usermanagement.dto.PasswordChangeApprovalDTO;
 import com.yash.usermanagement.dto.PasswordChangeRequestDTO;
 import com.yash.usermanagement.model.PasswordChangeRequest;
+import com.yash.usermanagement.model.UserDevice;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
@@ -52,4 +54,6 @@ public interface UserService {
     void registerFcmToken(String token, String userEmail);
 
     List<Map<String, Object>> getAllPendingPasswordChangeRequests();
+
+    List<UserDevice> getUserDevices(UUID userId);
 }

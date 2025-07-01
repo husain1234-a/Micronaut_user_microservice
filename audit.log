@@ -49,3 +49,4 @@
 2025-06-28 17:02:55 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@419c7d11] | Timestamp: 1751110375418
 2025-06-28 17:03:36 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@aee5a36] | Timestamp: 1751110416559
 2025-06-28 17:04:12 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@656af014] | Timestamp: 1751110452741
+

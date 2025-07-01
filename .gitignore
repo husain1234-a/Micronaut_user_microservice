@@ -17,3 +17,48 @@ out/
 # Firebase service account (do not commit to git)
 # src/main/resources/firebase-service-account.json
 **/firebase-service-account.json
+
+# Application specific
+application-local.yml
+application-dev.yml
+application-prod.yml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Compiled class files
+*.class
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# Virtual machine crash logs
+hs_err_pid*
+
+# Generated files
+generated/
+generated-sources/
+generated-test-sources/
+
+# Test reports
+test-results/
+reports/
+
+# Local configuration
+local.properties
+
+audit.log

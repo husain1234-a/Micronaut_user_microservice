@@ -1,6 +1,8 @@
 package com.yash.usermanagement.controller;
 
+import com.yash.usermanagement.dto.*;
 import com.yash.usermanagement.model.User;
+import com.yash.usermanagement.model.UserDevice;
 import com.yash.usermanagement.service.UserService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
@@ -13,11 +15,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.yash.usermanagement.dto.CreateUserRequest;
-import com.yash.usermanagement.dto.UpdateUserRequest;
-import com.yash.usermanagement.dto.UserResponse;
-import com.yash.usermanagement.dto.PasswordChangeRequestDTO;
-import com.yash.usermanagement.dto.PasswordChangeApprovalDTO;
 import com.yash.usermanagement.exception.ResourceNotFoundException;
 import com.yash.usermanagement.exception.ValidationException;
 import com.yash.usermanagement.exception.DuplicateResourceException;
@@ -126,7 +123,8 @@ public class UserController {
         }
     }
 
-        @Post("/{id}/change-password")
+    @ExecuteOn(TaskExecutors.BLOCKING)
+    @Post("/{id}/change-password")
     @Operation(summary = "Request password change")
     @Secured("USER")
     public HttpResponse<Void> requestPasswordChange(
@@ -194,6 +192,19 @@ public class UserController {
         }    
     }
 
+    @Get("/{userId}/devices")
+    @Operation(summary = "Get devices by userId")
+    @Secured({ "ADMIN", "USER" })
+    public HttpResponse<List<UserDevice>> getUserDevices(@PathVariable UUID userId) {
+        LOG.info("Finding devices by userId: {}", userId);
+        try {
+            List<UserDevice> result= userService.getUserDevices(userId);
+            return HttpResponse.ok(result);
+        } catch (ValidationException e) {
+            LOG.warn("Invalid email format: {}", userId);
+            throw e;
+        }
+    }
     // Helper methods for conversion
     private User convertToUser(CreateUserRequest request) {
         User user = new User();

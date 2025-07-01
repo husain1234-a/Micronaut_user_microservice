@@ -1,5 +1,4 @@
 package com.yash.usermanagement.dto;
-
 import io.micronaut.serde.annotation.Serdeable;
 
 @Serdeable

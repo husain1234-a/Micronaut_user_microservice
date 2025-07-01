@@ -1,5 +1,6 @@
 package com.yash.usermanagement.service.impl;
 
+import com.yash.usermanagement.dto.UserDeviceDto;
 import com.yash.usermanagement.model.*;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -91,8 +92,7 @@ public class UserServiceImpl implements UserService {
             LOG.info("User created successfully with ID: {}", savedUser.getId());
 
             // Send notification via Notification microservice
-            notificationClientService.sendUserCreationNotification(savedUser.getEmail(),
-                    "Welcome " + savedUser.getFirstName() + "!");
+            notificationClientService.sendUserCreationNotification(savedUser);
 
             return savedUser;
         } catch (Exception e) {
@@ -464,6 +464,17 @@ public class UserServiceImpl implements UserService {
             LOG.error("Error fetching all pending password change requests: {}", e.getMessage());
             throw new DatabaseException("Failed to fetch all pending password change requests", e);
         }
+    }
+
+    @Override
+    public List<UserDevice> getUserDevices(UUID userId) {
+        List<UserDevice> userDevices = null;
+        try{
+            userDevices = userDeviceRepository.findByUserId(userId);
+        }catch (Exception e){
+            LOG.error("Error fetching user devices: {}", e.getMessage());
+        }
+        return userDevices;
     }
 
     @Override
