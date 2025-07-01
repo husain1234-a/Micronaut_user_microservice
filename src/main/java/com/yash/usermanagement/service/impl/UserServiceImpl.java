@@ -35,6 +35,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
+
 @Singleton
 public class UserServiceImpl implements UserService {
 
@@ -107,6 +110,11 @@ public class UserServiceImpl implements UserService {
             LOG.error("Error fetching users: {}", e.getMessage());
             throw new DatabaseException("Failed to fetch users", e);
         }
+    }
+
+    @Override
+    public Page<User> getAllUsers(Pageable pageable) {
+        return userRepository.findAllBy(pageable);
     }
 
     @Override

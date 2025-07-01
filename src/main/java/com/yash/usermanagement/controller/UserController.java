@@ -22,6 +22,8 @@ import com.yash.usermanagement.exception.ResourceNotFoundException;
 import com.yash.usermanagement.exception.ValidationException;
 import com.yash.usermanagement.exception.DuplicateResourceException;
 import com.yash.usermanagement.model.PasswordChangeRequest;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -59,15 +61,16 @@ public class UserController {
     }
 
     @Get
-    @Operation(summary = "Get all users")
+    @Operation(summary = "Get all users (paginated)")
     @Secured("ADMIN")
-    public HttpResponse<List<UserResponse>> getAllUsers() {
-        LOG.info("Fetching all users");
-        List<User> users = userService.getAllUsers();
-        List<UserResponse> userResponses = users.stream()
-                .map(this::convertToUserResponse)
-                .collect(Collectors.toList());
-        return HttpResponse.ok(userResponses);
+    public HttpResponse<Page<UserResponse>> getAllUsers(
+            @QueryValue(defaultValue = "0") int page,
+            @QueryValue(defaultValue = "10") int size) {
+        LOG.info("Fetching users page {} with size {}", page, size);
+        Pageable pageable = Pageable.from(page, size);
+        Page<User> userPage = userService.getAllUsers(pageable);
+        Page<UserResponse> responsePage = userPage.map(this::convertToUserResponse);
+        return HttpResponse.ok(responsePage);
     }
 
     @Get("/{id}")

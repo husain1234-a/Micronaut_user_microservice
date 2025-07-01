@@ -5,6 +5,8 @@ import io.micronaut.data.annotation.Join;
 import io.micronaut.data.jdbc.annotation.JdbcRepository;
 import io.micronaut.data.model.query.builder.sql.Dialect;
 import io.micronaut.data.repository.CrudRepository;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,4 +27,6 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 
     @Join(value = "address", type = Join.Type.LEFT_FETCH)
     List<User> findAll();
+
+    Page<User> findAllBy(Pageable pageable);
 }

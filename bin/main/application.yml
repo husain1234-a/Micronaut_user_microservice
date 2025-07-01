@@ -135,4 +135,4 @@ firebase:
 
 notification:
   service:
-    url: http://notification-microservice-host:port
+    url: http://localhost:9000

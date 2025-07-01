@@ -11,10 +11,15 @@ import com.yash.usermanagement.dto.PasswordChangeApprovalDTO;
 import com.yash.usermanagement.dto.PasswordChangeRequestDTO;
 import com.yash.usermanagement.model.PasswordChangeRequest;
 
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
+
 public interface UserService {
     User createUser(User user);
 
     List<User> getAllUsers();
+
+    Page<User> getAllUsers(Pageable pageable);
 
     User getUserById(UUID id);
 
