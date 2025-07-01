@@ -1,5 +1,7 @@
 package com.yash.usermanagement.dto;
+import io.micronaut.serde.annotation.Serdeable;
 
+@Serdeable
 public class NotificationRequest {
     private String recipient;
     private String message;
