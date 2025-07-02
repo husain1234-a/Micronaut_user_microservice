@@ -57,3 +57,5 @@
 2025-07-01 17:41:34 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.deleteUser | Args: [5924d724-9565-40b1-9bff-211a13303a79] | Timestamp: 1751371894994
 2025-07-01 17:42:18 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@1344df69] | Timestamp: 1751371938860
 2025-07-01 22:47:11 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@671d712] | Timestamp: 1751390231795
+2025-07-02 11:33:57 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@2a5a0ad0] | Timestamp: 1751436237226
+2025-07-02 11:34:31 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@1d396b30] | Timestamp: 1751436271779
