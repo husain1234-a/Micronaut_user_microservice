@@ -28,5 +28,5 @@ public interface UserRepository extends CrudRepository<User, UUID> {
     @Join(value = "address", type = Join.Type.LEFT_FETCH)
     List<User> findAll();
 
-    Page<User> findAllBy(Pageable pageable);
+    Page<User> findAll(Pageable pageable);
 }

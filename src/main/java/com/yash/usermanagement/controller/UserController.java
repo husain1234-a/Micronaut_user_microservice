@@ -62,7 +62,7 @@ public class UserController {
     @Secured("ADMIN")
     public HttpResponse<Page<UserResponse>> getAllUsers(
             @QueryValue(defaultValue = "0") int page,
-            @QueryValue(defaultValue = "10") int size) {
+            @QueryValue(defaultValue = "2") int size) {
         LOG.info("Fetching users page {} with size {}", page, size);
         Pageable pageable = Pageable.from(page, size);
         Page<User> userPage = userService.getAllUsers(pageable);

@@ -101,20 +101,20 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    @Override
-    public List<User> getAllUsers() {
-        try {
-            LOG.info("Fetching all users");
-            return userRepository.findAll();
-        } catch (Exception e) {
-            LOG.error("Error fetching users: {}", e.getMessage());
-            throw new DatabaseException("Failed to fetch users", e);
-        }
-    }
+    // @Override
+    // public List<User> getAllUsers() {
+    //     try {
+    //         LOG.info("Fetching all users");
+    //         return userRepository.findAll();
+    //     } catch (Exception e) {
+    //         LOG.error("Error fetching users: {}", e.getMessage());
+    //         throw new DatabaseException("Failed to fetch users", e);
+    //     }
+    // }
 
     @Override
     public Page<User> getAllUsers(Pageable pageable) {
-        return userRepository.findAllBy(pageable);
+        return userRepository.findAll(pageable);
     }
 
     @Override
