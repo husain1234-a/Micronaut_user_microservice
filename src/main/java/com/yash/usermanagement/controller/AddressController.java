@@ -1,6 +1,7 @@
 package com.yash.usermanagement.controller;
 
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,7 @@ import com.yash.usermanagement.model.Address;
 import com.yash.usermanagement.service.AddressService;
 import com.yash.usermanagement.exception.ResourceNotFoundException;
 import com.yash.usermanagement.exception.ValidationException;
+import reactor.core.publisher.Mono;
 
 @Controller("/api/addresses")
 @Tag(name = "Address Management")
@@ -27,53 +29,37 @@ public class AddressController {
 
     @Post
     @Operation(summary = "Create a new address")
-    public HttpResponse<AddressResponse> createAddress(@Body @Valid CreateAddressRequest request) {
-        try {
-            Address address = convertToAddress(request);
-            Address createdAddress = addressService.createAddress(address);
-            return HttpResponse.created(convertToAddressResponse(createdAddress));
-        } catch (ValidationException e) {
-            throw e;
-        }
+    public Mono<HttpResponse<AddressResponse>> createAddress(@Body @Valid CreateAddressRequest request) {
+        Address address = convertToAddress(request);
+        return addressService.createAddress(address)
+            .map(this::convertToAddressResponse)
+            .map(HttpResponse::created);
     }
 
     @Get("/{id}")
     @Operation(summary = "Get address by ID")
-    public HttpResponse<AddressResponse> getAddressById(@PathVariable UUID id) {
-        try {
-            return addressService.getAddressById(id)
-                    .map(this::convertToAddressResponse)
-                    .map(HttpResponse::ok)
-                    .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        }
+    public Mono<MutableHttpResponse<AddressResponse>> getAddressById(@PathVariable UUID id) {
+        return addressService.getAddressById(id)
+            .map(this::convertToAddressResponse)
+            .map(HttpResponse::ok)
+            .defaultIfEmpty(HttpResponse.notFound((AddressResponse) null));
     }
 
     @Put("/{id}")
     @Operation(summary = "Update address by ID")
-    public HttpResponse<AddressResponse> updateAddress(@PathVariable UUID id,
+    public Mono<HttpResponse<AddressResponse>> updateAddress(@PathVariable UUID id,
             @Body @Valid UpdateAddressRequest request) {
-        try {
-            Address address = convertToAddress(request);
-            Address updatedAddress = addressService.updateAddress(id, address);
-            return HttpResponse.ok(convertToAddressResponse(updatedAddress));
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (ValidationException e) {
-            throw e;
-        }
+        Address address = convertToAddress(request);
+        return addressService.updateAddress(id, address)
+            .map(this::convertToAddressResponse)
+            .map(HttpResponse::ok);
     }
 
     @Delete("/{id}")
     @Operation(summary = "Delete address by ID")
-    public HttpResponse<Void> deleteAddress(@PathVariable UUID id) {
-        try {
-            addressService.deleteAddress(id);
-            return HttpResponse.noContent();
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        }
+    public Mono<HttpResponse<Void>> deleteAddress(@PathVariable UUID id) {
+        return addressService.deleteAddress(id)
+            .thenReturn(HttpResponse.noContent());
     }
 
     // Helper methods for conversion

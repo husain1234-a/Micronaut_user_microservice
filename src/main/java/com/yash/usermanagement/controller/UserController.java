@@ -23,6 +23,8 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import java.util.*;
 import java.util.stream.Collectors;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 
 @Controller("/api/users")
 @Tag(name = "User Management")
@@ -40,171 +42,110 @@ public class UserController {
     @Post
     @Operation(summary = "Create a new user")
     @Secured("ADMIN")
-    @ExecuteOn(TaskExecutors.BLOCKING)  
-    public HttpResponse<UserResponse> createUser(@Body @Valid CreateUserRequest request) {
+    public Mono<HttpResponse<UserResponse>> createUser(@Body @Valid CreateUserRequest request) {
         LOG.info("Creating new user with role: {}", request.getRole());
-        try {
-            User user = convertToUser(request);
-            User createdUser = userService.createUser(user);
-
-            return HttpResponse.created(convertToUserResponse(createdUser));
-        } catch (DuplicateResourceException e) {
-            LOG.warn("Duplicate user creation attempted: {}", e.getMessage());
-            throw e;
-        } catch (ValidationException e) {
-            LOG.warn("Invalid user data: {}", e.getMessage());
-            throw e;
-        }
+        User user = convertToUser(request);
+        return userService.createUser(user)
+            .map(this::convertToUserResponse)
+            .map(HttpResponse::created);
     }
 
     @Get
     @Operation(summary = "Get all users (paginated)")
     @Secured("ADMIN")
-    public HttpResponse<Page<UserResponse>> getAllUsers(
-            @QueryValue(defaultValue = "0") int page,
-            @QueryValue(defaultValue = "2") int size) {
-        LOG.info("Fetching users page {} with size {}", page, size);
+    public Mono<Page<UserResponse>> getAllUsers(@QueryValue(defaultValue = "0") int page,
+                                                @QueryValue(defaultValue = "2") int size) {
         Pageable pageable = Pageable.from(page, size);
-        Page<User> userPage = userService.getAllUsers(pageable);
-        Page<UserResponse> responsePage = userPage.map(this::convertToUserResponse);
-        return HttpResponse.ok(responsePage);
+        return userService.getAllUsers(pageable)
+            .map(userPage -> userPage.map(this::convertToUserResponse));
     }
 
     @Get("/{id}")
     @Operation(summary = "Get user by ID")
     @Secured({ "ADMIN", "USER" })
-    public HttpResponse<UserResponse> getUserById(@PathVariable UUID id) {
+    public Mono<HttpResponse<UserResponse>> getUserById(@PathVariable UUID id) {
         LOG.info("Fetching user with id: {}", id);
-        try {
-            User user = userService.getUserById(id);
-            return HttpResponse.ok(convertToUserResponse(user));
-        } catch (ResourceNotFoundException e) {
-            LOG.warn("User not found with id: {}", id);
-            throw e;
-        }
+        return userService.getUserById(id)
+            .map(this::convertToUserResponse)
+            .map(HttpResponse::ok);
     }
 
     @Put("/{id}")
     @Operation(summary = "Update user")
     @Secured({ "ADMIN", "USER" })
-    public HttpResponse<UserResponse> updateUser(@PathVariable UUID id, @Body @Valid UpdateUserRequest request) {
-        try {
-            User user = convertToUser(request);
-            User updatedUser = userService.updateUser(id, user);
-            return HttpResponse.ok(convertToUserResponse(updatedUser));
-        } catch (Exception e) {
-            LOG.error("Error updating user: {}", e.getMessage());
-            throw e;
-        }
+    public Mono<HttpResponse<UserResponse>> updateUser(@PathVariable UUID id, @Body @Valid UpdateUserRequest request) {
+        User user = convertToUser(request);
+        return userService.updateUser(id, user)
+            .map(this::convertToUserResponse)
+            .map(HttpResponse::ok);
     }
 
-     @Delete("/{id}")
+    @Delete("/{id}")
     @Operation(summary = "Delete user")
     @Secured({ "ADMIN", "USER" })
-    public MutableHttpResponse<Map<String, Boolean>> deleteUser(@PathVariable UUID id) {
+    public Mono<MutableHttpResponse<Map<String, Boolean>>> deleteUser(@PathVariable UUID id) {
         LOG.info("Deleting user with id: {}", id);
-        userService.deleteUser(id);
-        return HttpResponse.ok(Collections.singletonMap("success", true));
+        return userService.deleteUser(id)
+            .thenReturn(HttpResponse.ok(Collections.singletonMap("success", true)));
     }
 
     @Get("/email/{email}")
     @Operation(summary = "Get user by email")
     @Secured({ "ADMIN", "USER" })
-    public HttpResponse<UserResponse> getUserByEmail(@PathVariable String email) {
+    public Mono<HttpResponse<UserResponse>> getUserByEmail(@PathVariable String email) {
         LOG.info("Finding user by email: {}", email);
-        try {
-            return userService.findByEmail(email)
-                    .map(this::convertToUserResponse)
-                    .map(HttpResponse::ok)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        } catch (ValidationException e) {
-            LOG.warn("Invalid email format: {}", email);
-            throw e;
-        }
+        return userService.findByEmail(email)
+            .map(this::convertToUserResponse)
+            .map(HttpResponse::ok);
     }
 
-    @ExecuteOn(TaskExecutors.BLOCKING)
     @Post("/{id}/change-password")
     @Operation(summary = "Request password change")
     @Secured("USER")
-    public HttpResponse<Void> requestPasswordChange(
+    public Mono<HttpResponse<Void>> requestPasswordChange(
             @PathVariable UUID id,
             @Body @Valid PasswordChangeRequestDTO request) {
         LOG.info("Requesting password change for user with id: {}", id);
-        
-        // Now notification to admin handled by userService
-        try{
-            userService.requestPasswordChange(id, request);
-            return HttpResponse.accepted();
-        }catch (Exception e){
-            LOG.error("Failed to request password change: {}", e.getMessage());
-            return HttpResponse.serverError();
-        }
-
+        return userService.requestPasswordChange(id, request)
+            .thenReturn(HttpResponse.accepted());
     }
 
     @Put("/{id}/approve-password-change")
     @Operation(summary = "Approve password change request")
     @Secured("ADMIN")
-    public HttpResponse<Void> approvePasswordChange(
+    public Mono<HttpResponse<Void>> approvePasswordChange(
             @PathVariable UUID id,
             @Body @Valid PasswordChangeApprovalDTO request) {
         LOG.info("Processing password change approval for user with id: {}", id);
-        try {
-            
-            userService.approvePasswordChange(id, request);
-            return HttpResponse.ok();
-        } catch (ResourceNotFoundException e) {
-            LOG.warn("User not found for password change approval with id: {}", id);
-            throw e;
-        }
+        return userService.approvePasswordChange(id, request)
+            .thenReturn(HttpResponse.ok());
     }
 
     @Get("/password-change-requests/pending")
     @Secured("ADMIN")
     @Operation(summary = "Get all pending password change requests")
-    public HttpResponse<List<Map<String, Object>>> getAllPendingPasswordChangeRequests() {
-        List<PasswordChangeRequest> pendingRequests = userService.getPendingPasswordChangeRequests();
-        // For each request, fetch user info for display
-        try{
-            List<Map<String, Object>> result = userService.getAllPendingPasswordChangeRequests();
-        return HttpResponse.ok(result);
-    }catch (Exception e) {
-            LOG.error("Failed to fetch pending password change requests: {}", e.getMessage());
-            return HttpResponse.serverError();
-        }
-
+    public Flux<Map<String, Object>> getAllPendingPasswordChangeRequests() {
+        return userService.getAllPendingPasswordChangeRequests();
     }
 
     @Put("/password-change-requests/{requestId}/approve")
     @Secured("ADMIN")
     @Operation(summary = "Approve or reject a password change request")
-    public HttpResponse<Void> approveOrRejectPasswordChangeRequest(
+    public Mono<HttpResponse<Void>> approveOrRejectPasswordChangeRequest(
             @PathVariable UUID requestId,
             @Body @Valid PasswordChangeApprovalDTO approvalDTO) {
-        // Find the request
-        try{
-            userService.approveOrRejectPasswordChangeRequest(requestId, approvalDTO);
-            return HttpResponse.ok();
-        }catch (Exception e) {
-            LOG.error("Failed to process password change request: {}", e.getMessage());
-            return HttpResponse.serverError();
-        }    
+        return userService.approveOrRejectPasswordChangeRequest(requestId, approvalDTO)
+            .thenReturn(HttpResponse.ok());
     }
 
     @Get("/{userId}/devices")
     @Operation(summary = "Get devices by userId")
     @Secured({ "ADMIN", "USER" })
-    public HttpResponse<List<UserDevice>> getUserDevices(@PathVariable UUID userId) {
+    public Flux<UserDevice> getUserDevices(@PathVariable UUID userId) {
         LOG.info("Finding devices by userId: {}", userId);
-        try {
-            List<UserDevice> result= userService.getUserDevices(userId);
-            return HttpResponse.ok(result);
-        } catch (ValidationException e) {
-            LOG.warn("Invalid email format: {}", userId);
-            throw e;
-        }
+        return userService.getUserDevices(userId);
     }
+
     // Helper methods for conversion
     private User convertToUser(CreateUserRequest request) {
         User user = new User();

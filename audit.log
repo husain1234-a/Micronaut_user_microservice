@@ -59,3 +59,12 @@
 2025-07-01 22:47:11 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@671d712] | Timestamp: 1751390231795
 2025-07-02 11:33:57 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@2a5a0ad0] | Timestamp: 1751436237226
 2025-07-02 11:34:31 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@1d396b30] | Timestamp: 1751436271779
+2025-07-02 12:21:16 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@3f6d0b13] | Timestamp: 1751439076306
+2025-07-02 18:21:08 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@3c5be3e3] | Timestamp: 1751460668923
+2025-07-02 18:27:23 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@3fad8bdb] | Timestamp: 1751461043750
+2025-07-03 12:00:57 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@6987175c] | Timestamp: 1751524257766
+2025-07-03 12:20:40 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@1e78f7d6] | Timestamp: 1751525440134
+2025-07-03 12:20:57 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@2ccb1230] | Timestamp: 1751525457869
+2025-07-03 13:17:46 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@3940a440] | Timestamp: 1751528866682
+2025-07-03 18:09:08 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@341744fb] | Timestamp: 1751546348678
+2025-07-04 13:06:23 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@30e355e0] | Timestamp: 1751614583208

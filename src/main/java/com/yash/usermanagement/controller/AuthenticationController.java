@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
 
 @Controller("/api/auth")
 @Tag(name = "Authentication")
@@ -32,36 +33,22 @@ public class AuthenticationController {
     @Post("/login")
     @Operation(summary = "Login user")
     @Secured(SecurityRule.IS_ANONYMOUS)
-    public HttpResponse<LoginResponseDTO> login(@Body @Valid LoginRequestDTO loginRequest) {
+    public Mono<HttpResponse<LoginResponseDTO>> login(@Body @Valid LoginRequestDTO loginRequest) {
         LOG.info("Login request received for user: {}", loginRequest.getEmail());
-        try {
-            LoginResponseDTO response = authenticationService.login(loginRequest);
-            return HttpResponse.ok(response);
-        } catch (AuthenticationException e) {
-            LOG.warn("Login failed for user: {}", loginRequest.getEmail());
-            throw e;
-        }
+        return authenticationService.login(loginRequest)
+            .map(HttpResponse::ok);
     }
 
     @Post("/logout")
     @Operation(summary = "Logout user")
     @Secured(SecurityRule.IS_AUTHENTICATED)
-    public HttpResponse<Void> logout(@Header(HttpHeaders.AUTHORIZATION) String authorization) {
+    public Mono<HttpResponse<Void>> logout(@Header(HttpHeaders.AUTHORIZATION) String authorization) {
         LOG.info("Logout request received");
-        try {
-            if (authorization == null || !authorization.startsWith("Bearer ")) {
-                throw new AuthenticationException("Invalid authorization header");
-            }
-
-            String token = authorization.substring(7); // Remove "Bearer " prefix
-            authenticationService.logout(token);
-            return HttpResponse.ok();
-        } catch (AuthenticationException e) {
-            LOG.warn("Logout failed: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            LOG.error("Error during logout", e);
-            throw new AuthenticationException("An error occurred during logout");
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return Mono.error(new AuthenticationException("Invalid authorization header"));
         }
+        String token = authorization.substring(7); // Remove "Bearer " prefix
+        return authenticationService.logout(token)
+            .thenReturn(HttpResponse.ok());
     }
 }

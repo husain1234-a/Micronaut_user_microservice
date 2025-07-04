@@ -64,6 +64,17 @@ dependencies {
     testImplementation("io.micronaut:micronaut-http-client")
     implementation 'io.projectreactor:reactor-core:3.5.11'
     implementation("io.micronaut:micronaut-websocket:4.9.4")
+
+    // --- R2DBC and Reactive Dependencies ---
+    implementation("io.micronaut.data:micronaut-data-r2dbc")
+    implementation("io.r2dbc:r2dbc-pool")
+    implementation("org.postgresql:r2dbc-postgresql:1.0.2.RELEASE")
+    runtimeOnly("org.postgresql:r2dbc-postgresql:1.0.2.RELEASE")
+
+    // --- Comment out JDBC dependencies for user data access ---
+    // implementation("io.micronaut.sql:micronaut-jdbc-hikari")
+    // implementation("io.micronaut.data:micronaut-data-jdbc")
+    // runtimeOnly('org.postgresql:postgresql:42.7.2')
 }
 
 application {

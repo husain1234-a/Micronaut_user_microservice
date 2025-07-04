@@ -31,17 +31,9 @@ micronaut:
   data:
     jdbc:
       repositories:
-        enabled: true
-      default:
-        enabled: true
-        dialect: POSTGRES
-        schema-generate: CREATE
-        schema-generate-sources: CLASSES
-        schema-generate-databases: true
-        schema-generate-create: true
-        schema-generate-drop: true
-        schema-generate-create-sources: CLASSES
-        schema-generate-drop-sources: CLASSES
+        enabled: false
+    r2dbc:
+      dialect: POSTGRES
   security:
     enabled: true
     token:
@@ -85,30 +77,6 @@ logger:
     io.micronaut.security.rules: TRACE
     com.yash.usermanagement: DEBUG
  
-datasources:
-  default:
-    url: "jdbc:postgresql://localhost:5432/usermanagement"
-    username: "postgres"
-    password: "admin123"
-    driverClassName: org.postgresql.Driver
-    dialect: POSTGRES
-    schema-generate:
-      create: true
-      use-foreign-keys: true
-    db-type: postgres
-    poolName: HikariPool
-    maximumPoolSize: 10
-    minimumIdle: 5
-    idleTimeout: 300000
-    connectionTimeout: 20000
-    maxLifetime: 1200000
-    validationQuery: "SELECT 1"
-    testOnBorrow: true
-    testWhileIdle: true
-    timeBetweenEvictionRunsMillis: 60000
-    minEvictableIdleTimeMillis: 300000
-    jmxEnabled: true
- 
 # DynamoDB Configuration
 dynamodb:
   endpoint: "http://localhost:8000"
@@ -136,3 +104,13 @@ firebase:
 notification:
   service:
     url: http://localhost:9000
+
+# --- ADD THIS BLOCK FOR R2DBC ---
+r2dbc:
+  datasources:
+    default:
+      url: r2dbc:postgresql://localhost:5432/usermanagement
+      username: postgres
+      password: admin123
+      pool:
+        enabled: true

@@ -2,9 +2,10 @@ package com.yash.usermanagement.service;
 
 import com.yash.usermanagement.dto.LoginRequestDTO;
 import com.yash.usermanagement.dto.LoginResponseDTO;
+import reactor.core.publisher.Mono;
 
 public interface AuthenticationService {
-    LoginResponseDTO login(LoginRequestDTO loginRequest);
+    Mono<LoginResponseDTO> login(LoginRequestDTO loginRequest);
 
-    void logout(String token);
+    Mono<Void> logout(String token);
 }

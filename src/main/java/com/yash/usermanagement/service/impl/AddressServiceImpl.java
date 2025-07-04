@@ -1,7 +1,6 @@
 package com.yash.usermanagement.service.impl;
 
 import jakarta.inject.Singleton;
-import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +10,7 @@ import com.yash.usermanagement.model.Address;
 import com.yash.usermanagement.repository.AddressRepository;
 import com.yash.usermanagement.service.AddressService;
 
-import java.util.Optional;
+import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 @Singleton
@@ -25,77 +24,61 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    @Transactional
-    public Address createAddress(Address address) {
-        try {
-            LOG.info("Creating new address");
-            Address savedAddress = addressRepository.save(address);
-            LOG.info("Address created successfully with ID: {}", savedAddress.getId());
-            return savedAddress;
-        } catch (Exception e) {
-            LOG.error("Error creating address: {}", e.getMessage(), e);
-            throw new DatabaseException("Failed to create address", e);
-        }
+    public Mono<Address> createAddress(Address address) {
+        LOG.info("Creating new address");
+        return addressRepository.save(address)
+            .doOnSuccess(savedAddress -> LOG.info("Address created successfully with ID: {}", savedAddress.getId()))
+            .onErrorMap(e -> {
+                LOG.error("Error creating address: {}", e.getMessage(), e);
+                return new DatabaseException("Failed to create address", e);
+            });
     }
 
     @Override
-    public Optional<Address> getAddressById(UUID id) {
-        try {
-            LOG.info("Fetching address with ID: {}", id);
-            Optional<Address> address = addressRepository.findById(id);
-            if (address.isPresent()) {
-                LOG.info("Address found with ID: {}", id);
-            } else {
-                LOG.warn("Address not found with ID: {}", id);
-            }
-            return address;
-        } catch (Exception e) {
-            LOG.error("Error fetching address with ID {}: {}", id, e.getMessage(), e);
-            throw new DatabaseException("Failed to fetch address", e);
-        }
+    public Mono<Address> getAddressById(UUID id) {
+        LOG.info("Fetching address with ID: {}", id);
+        return addressRepository.findById(id)
+            .switchIfEmpty(Mono.error(new ResourceNotFoundException("Address not found with ID: " + id)))
+            .doOnSuccess(address -> LOG.info("Address found with ID: {}", id))
+            .onErrorMap(e -> {
+                LOG.error("Error fetching address with ID {}: {}", id, e.getMessage(), e);
+                return new DatabaseException("Failed to fetch address", e);
+            });
     }
 
     @Override
-    @Transactional
-    public Address updateAddress(UUID id, Address address) {
-        try {
-            LOG.info("Updating address with ID: {}", id);
-            return addressRepository.findById(id)
-                    .map(existingAddress -> {
-                        address.setId(id);
-                        Address updatedAddress = addressRepository.update(address);
-                        LOG.info("Address updated successfully with ID: {}", id);
-                        return updatedAddress;
-                    })
-                    .orElseThrow(() -> {
-                        LOG.warn("Address not found with ID: {}", id);
-                        return new ResourceNotFoundException("Address not found with ID: " + id);
-                    });
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("Error updating address with ID {}: {}", id, e.getMessage(), e);
-            throw new DatabaseException("Failed to update address", e);
-        }
+    public Mono<Address> updateAddress(UUID id, Address address) {
+        LOG.info("Updating address with ID: {}", id);
+        return addressRepository.findById(id)
+            .switchIfEmpty(Mono.error(new ResourceNotFoundException("Address not found with ID: " + id)))
+            .flatMap(existingAddress -> {
+                address.setId(id);
+                return addressRepository.update(address)
+                    .doOnSuccess(updatedAddress -> LOG.info("Address updated successfully with ID: {}", id));
+            })
+            .onErrorMap(e -> {
+                LOG.error("Error updating address with ID {}: {}", id, e.getMessage(), e);
+                return new DatabaseException("Failed to update address", e);
+            });
     }
 
     @Override
-    @Transactional
-    public void deleteAddress(UUID id) {
-        try {
-            LOG.info("Deleting address with ID: {}", id);
-            if (addressRepository.existsById(id)) {
-                addressRepository.deleteById(id);
-                LOG.info("Address deleted successfully with ID: {}", id);
-            } else {
-                LOG.warn("Address not found with ID: {}", id);
-                throw new ResourceNotFoundException("Address not found with ID: " + id);
-            }
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("Error deleting address with ID {}: {}", id, e.getMessage(), e);
-            throw new DatabaseException("Failed to delete address", e);
-        }
+    public Mono<Void> deleteAddress(UUID id) {
+        LOG.info("Deleting address with ID: {}", id);
+        return addressRepository.existsById(id)
+            .flatMap(exists -> {
+                if (exists) {
+                    return addressRepository.deleteById(id)
+                        .doOnSuccess(v -> LOG.info("Address deleted successfully with ID: {}", id))
+                        .then();
+                } else {
+                    LOG.warn("Address not found with ID: {}", id);
+                    return Mono.error(new ResourceNotFoundException("Address not found with ID: " + id));
+                }
+            })
+            .onErrorMap(e -> {
+                LOG.error("Error deleting address with ID {}: {}", id, e.getMessage(), e);
+                return new DatabaseException("Failed to delete address", e);
+            });
     }
 }

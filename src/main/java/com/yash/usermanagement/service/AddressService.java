@@ -1,16 +1,15 @@
 package com.yash.usermanagement.service;
 
-import java.util.Optional;
+import com.yash.usermanagement.model.Address;
+import reactor.core.publisher.Mono;
 import java.util.UUID;
 
-import com.yash.usermanagement.model.Address;
-
 public interface AddressService {
-    Address createAddress(Address address);
+    Mono<Address> createAddress(Address address);
 
-    Optional<Address> getAddressById(UUID id);
+    Mono<Address> getAddressById(UUID id);
 
-    Address updateAddress(UUID id, Address address);
+    Mono<Address> updateAddress(UUID id, Address address);
 
-    void deleteAddress(UUID id);
+    Mono<Void> deleteAddress(UUID id);
 }

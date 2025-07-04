@@ -44,94 +44,61 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Loggable
     @Auditable
-    public LoginResponseDTO login(LoginRequestDTO loginRequest) {
+    public Mono<LoginResponseDTO> login(LoginRequestDTO loginRequest) {
         LOG.info("Attempting login for user: {}", loginRequest.getEmail());
-        try {
-            // Find user by email
-            Optional<User> userOpt = userService.getUserByEmail(loginRequest.getEmail());
-            if (userOpt.isEmpty()) {
-                throw new AuthenticationException("Invalid email or password");
-            }
-
-            User user = userOpt.get();
-
-            // Validate password
-            if (!userService.validateCurrentPassword(user.getId(), loginRequest.getPassword())) {
-                throw new AuthenticationException("Invalid email or password");
-            }
-
-            // Generate JWT token
-            Map<String, Object> claims = new HashMap<>();
-            claims.put("sub", user.getEmail());
-            claims.put("userId", user.getId().toString());
-            claims.put("email", user.getEmail());
-            claims.put("roles", user.getRole().toString());
-            claims.put("firstname", user.getFirstName());
-            claims.put("lastname", user.getLastName());
-            // claims.put("iat", System.currentTimeMillis() / 1000);
-            // claims.put("exp", (System.currentTimeMillis() / 1000) + 3600);
-            LOG.info("Generated token claims: {}", claims);
-
-            Optional<String> tokenOpt = tokenGenerator.generateToken(claims);
-            if (tokenOpt.isEmpty()) {
-                throw new AuthenticationException("Failed to generate authentication token");
-            }
-
-            // Create response
-            LoginResponseDTO response = new LoginResponseDTO();
-            response.setAccessToken(tokenOpt.get());
-            response.setTokenType("Bearer");
-            response.setUserId(user.getId());
-            response.setEmail(user.getEmail());
-            response.setRole(user.getRole().toString());
-            response.setFirstName(user.getFirstName());
-            response.setLastName(user.getLastName());
-
-            LOG.info("Login successful for user: {} with role: {}", user.getEmail(), user.getRole());
-            return response;
-
-        } catch (AuthenticationException e) {
-            LOG.warn("Authentication failed for user: {}", loginRequest.getEmail());
-            throw e;
-        } catch (Exception e) {
-            LOG.error("Error during login for user: {}", loginRequest.getEmail(), e);
-            throw new AuthenticationException("An error occurred during login");
-        }
+        return userService.getUserByEmail(loginRequest.getEmail())
+            .switchIfEmpty(Mono.error(new AuthenticationException("Invalid email or password")))
+            .flatMap(user -> userService.validateCurrentPassword(user.getId(), loginRequest.getPassword())
+                .flatMap(isValid -> {
+                    if (!isValid) {
+                        return Mono.error(new AuthenticationException("Invalid email or password"));
+                    }
+                    Map<String, Object> claims = new HashMap<>();
+                    claims.put("sub", user.getEmail());
+                    claims.put("userId", user.getId().toString());
+                    claims.put("email", user.getEmail());
+                    claims.put("roles", user.getRole().toString());
+                    claims.put("firstname", user.getFirstName());
+                    claims.put("lastname", user.getLastName());
+                    LOG.info("Generated token claims: {}", claims);
+                    Optional<String> tokenOpt = tokenGenerator.generateToken(claims);
+                    if (tokenOpt.isEmpty()) {
+                        return Mono.error(new AuthenticationException("Failed to generate authentication token"));
+                    }
+                    LoginResponseDTO response = new LoginResponseDTO();
+                    response.setAccessToken(tokenOpt.get());
+                    response.setTokenType("Bearer");
+                    response.setUserId(user.getId());
+                    response.setEmail(user.getEmail());
+                    response.setRole(user.getRole().toString());
+                    response.setFirstName(user.getFirstName());
+                    response.setLastName(user.getLastName());
+                    LOG.info("Login successful for user: {} with role: {}", user.getEmail(), user.getRole());
+                    return Mono.just(response);
+                })
+            );
     }
 
     @Override
     @Loggable
     @Auditable
-    public void logout(String token) {
+    public Mono<Void> logout(String token) {
         LOG.info("Processing logout request");
-        try {
-            // Validate token
-            Publisher<Authentication> authenticationPublisher = tokenValidator.validateToken(token, null);
-            Authentication authentication = Mono.from(authenticationPublisher).block();
-
-            if (authentication == null) {
-                throw new AuthenticationException("Invalid token");
-            }
-
-            // Add token to blacklist with current timestamp
-            tokenBlacklist.put(token, System.currentTimeMillis());
-            LOG.info("Token added to blacklist");
-
-            // Clear any session data if needed
-            clearSessionData(authentication);
-
-            LOG.info("User logged out successfully");
-        } catch (Exception e) {
-            LOG.error("Error during logout: {}", e.getMessage());
-            throw new AuthenticationException("Failed to process logout", e);
-        }
+        return Mono.from(tokenValidator.validateToken(token, null))
+            .cast(Authentication.class)
+            .switchIfEmpty(Mono.error(new AuthenticationException("Invalid token")))
+            .flatMap(authentication -> {
+                Authentication auth = (Authentication) authentication;
+                tokenBlacklist.put(token, System.currentTimeMillis());
+                clearSessionData(auth);
+                LOG.info("User logged out successfully");
+                return Mono.<Void>empty();
+            });
     }
 
     private void clearSessionData(Authentication authentication) {
-        // Extract user information from authentication
         String userId = (String) authentication.getAttributes().get("userId");
         if (userId != null) {
-            // Clear any user-specific session data
             LOG.info("Cleared session data for user: {}", userId);
         }
     }
