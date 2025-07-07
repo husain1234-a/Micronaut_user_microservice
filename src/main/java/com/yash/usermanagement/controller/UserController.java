@@ -25,6 +25,21 @@ import java.util.*;
 import java.util.stream.Collectors;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MutableHttpResponse;
+import io.micronaut.http.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import java.util.UUID;
+
+import com.yash.usermanagement.dto.AddressResponse;
+import com.yash.usermanagement.dto.CreateAddressRequest;
+import com.yash.usermanagement.dto.UpdateAddressRequest;
+import com.yash.usermanagement.model.Address;
+import com.yash.usermanagement.exception.ResourceNotFoundException;
+import com.yash.usermanagement.exception.ValidationException;
+import reactor.core.publisher.Mono;
 
 @Controller("/api/users")
 @Tag(name = "User Management")
@@ -37,8 +52,6 @@ public class UserController {
         this.userService = userService;
     }
 
-    
-
     @Post
     @Operation(summary = "Create a new user")
     @Secured("ADMIN")
@@ -46,18 +59,18 @@ public class UserController {
         LOG.info("Creating new user with role: {}", request.getRole());
         User user = convertToUser(request);
         return userService.createUser(user)
-            .map(this::convertToUserResponse)
-            .map(HttpResponse::created);
+                .map(this::convertToUserResponse)
+                .map(HttpResponse::created);
     }
 
     @Get
     @Operation(summary = "Get all users (paginated)")
     @Secured("ADMIN")
     public Mono<Page<UserResponse>> getAllUsers(@QueryValue(defaultValue = "0") int page,
-                                                @QueryValue(defaultValue = "2") int size) {
+            @QueryValue(defaultValue = "2") int size) {
         Pageable pageable = Pageable.from(page, size);
         return userService.getAllUsers(pageable)
-            .map(userPage -> userPage.map(this::convertToUserResponse));
+                .map(userPage -> userPage.map(this::convertToUserResponse));
     }
 
     @Get("/{id}")
@@ -66,8 +79,8 @@ public class UserController {
     public Mono<HttpResponse<UserResponse>> getUserById(@PathVariable UUID id) {
         LOG.info("Fetching user with id: {}", id);
         return userService.getUserById(id)
-            .map(this::convertToUserResponse)
-            .map(HttpResponse::ok);
+                .map(this::convertToUserResponse)
+                .map(HttpResponse::ok);
     }
 
     @Put("/{id}")
@@ -76,8 +89,8 @@ public class UserController {
     public Mono<HttpResponse<UserResponse>> updateUser(@PathVariable UUID id, @Body @Valid UpdateUserRequest request) {
         User user = convertToUser(request);
         return userService.updateUser(id, user)
-            .map(this::convertToUserResponse)
-            .map(HttpResponse::ok);
+                .map(this::convertToUserResponse)
+                .map(HttpResponse::ok);
     }
 
     @Delete("/{id}")
@@ -86,7 +99,7 @@ public class UserController {
     public Mono<MutableHttpResponse<Map<String, Boolean>>> deleteUser(@PathVariable UUID id) {
         LOG.info("Deleting user with id: {}", id);
         return userService.deleteUser(id)
-            .thenReturn(HttpResponse.ok(Collections.singletonMap("success", true)));
+                .thenReturn(HttpResponse.ok(Collections.singletonMap("success", true)));
     }
 
     @Get("/email/{email}")
@@ -95,8 +108,8 @@ public class UserController {
     public Mono<HttpResponse<UserResponse>> getUserByEmail(@PathVariable String email) {
         LOG.info("Finding user by email: {}", email);
         return userService.findByEmail(email)
-            .map(this::convertToUserResponse)
-            .map(HttpResponse::ok);
+                .map(this::convertToUserResponse)
+                .map(HttpResponse::ok);
     }
 
     @Post("/{id}/change-password")
@@ -107,7 +120,7 @@ public class UserController {
             @Body @Valid PasswordChangeRequestDTO request) {
         LOG.info("Requesting password change for user with id: {}", id);
         return userService.requestPasswordChange(id, request)
-            .thenReturn(HttpResponse.accepted());
+                .thenReturn(HttpResponse.accepted());
     }
 
     @Put("/{id}/approve-password-change")
@@ -118,7 +131,7 @@ public class UserController {
             @Body @Valid PasswordChangeApprovalDTO request) {
         LOG.info("Processing password change approval for user with id: {}", id);
         return userService.approvePasswordChange(id, request)
-            .thenReturn(HttpResponse.ok());
+                .thenReturn(HttpResponse.ok());
     }
 
     @Get("/password-change-requests/pending")
@@ -135,7 +148,7 @@ public class UserController {
             @PathVariable UUID requestId,
             @Body @Valid PasswordChangeApprovalDTO approvalDTO) {
         return userService.approveOrRejectPasswordChangeRequest(requestId, approvalDTO)
-            .thenReturn(HttpResponse.ok());
+                .thenReturn(HttpResponse.ok());
     }
 
     @Get("/{userId}/devices")
@@ -144,6 +157,79 @@ public class UserController {
     public Flux<UserDevice> getUserDevices(@PathVariable UUID userId) {
         LOG.info("Finding devices by userId: {}", userId);
         return userService.getUserDevices(userId);
+    }
+
+    // Address endpoints (now use userService)
+    @Post("/{userId}/addresses")
+    @Operation(summary = "Create a new address for a user")
+    public Mono<HttpResponse<AddressResponse>> createAddress(@PathVariable UUID userId,
+            @Body @Valid CreateAddressRequest request) {
+        Address address = convertToAddress(request);
+        // Optionally associate address with userId here if needed
+        return userService.createAddress(address)
+                .map(this::convertToAddressResponse)
+                .map(HttpResponse::created);
+    }
+
+    @Get("/{userId}/addresses/{id}")
+    @Operation(summary = "Get address by ID for a user")
+    public Mono<MutableHttpResponse<AddressResponse>> getAddressById(@PathVariable UUID userId, @PathVariable UUID id) {
+        return userService.getAddressById(id)
+                .map(this::convertToAddressResponse)
+                .map(HttpResponse::ok)
+                .defaultIfEmpty(HttpResponse.notFound((AddressResponse) null));
+    }
+
+    @Put("/{userId}/addresses/{id}")
+    @Operation(summary = "Update address by ID for a user")
+    public Mono<HttpResponse<AddressResponse>> updateAddress(@PathVariable UUID userId, @PathVariable UUID id,
+            @Body @Valid UpdateAddressRequest request) {
+        Address address = convertToAddress(request);
+        return userService.updateAddress(id, address)
+                .map(this::convertToAddressResponse)
+                .map(HttpResponse::ok);
+    }
+
+    @Delete("/{userId}/addresses/{id}")
+    @Operation(summary = "Delete address by ID for a user")
+    public Mono<HttpResponse<Void>> deleteAddress(@PathVariable UUID userId, @PathVariable UUID id) {
+        return userService.deleteAddress(id)
+                .thenReturn(HttpResponse.noContent());
+    }
+
+    // Helper methods for address conversion
+    private Address convertToAddress(CreateAddressRequest request) {
+        Address address = new Address();
+        address.setStreetAddress(request.getStreetAddress());
+        address.setCity(request.getCity());
+        address.setState(request.getState());
+        address.setCountry(request.getCountry());
+        address.setPostalCode(request.getPostalCode());
+        address.setAddressType(request.getAddressType());
+        return address;
+    }
+
+    private Address convertToAddress(UpdateAddressRequest request) {
+        Address address = new Address();
+        address.setStreetAddress(request.getStreetAddress());
+        address.setCity(request.getCity());
+        address.setState(request.getState());
+        address.setCountry(request.getCountry());
+        address.setPostalCode(request.getPostalCode());
+        address.setAddressType(request.getAddressType());
+        return address;
+    }
+
+    private AddressResponse convertToAddressResponse(Address address) {
+        AddressResponse response = new AddressResponse();
+        response.setId(address.getId());
+        response.setStreetAddress(address.getStreetAddress());
+        response.setCity(address.getCity());
+        response.setState(address.getState());
+        response.setCountry(address.getCountry());
+        response.setPostalCode(address.getPostalCode());
+        response.setAddressType(address.getAddressType());
+        return response;
     }
 
     // Helper methods for conversion

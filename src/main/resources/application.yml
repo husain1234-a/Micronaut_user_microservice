@@ -50,6 +50,7 @@ micronaut:
         access: isAnonymous()
       - pattern: /api/auth/logout
         access: isAuthenticated()
+      -
       - pattern: /api/users/**
         access: isAuthenticated()
       - pattern: /swagger/**

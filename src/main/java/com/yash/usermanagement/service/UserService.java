@@ -10,6 +10,7 @@ import com.yash.usermanagement.dto.PasswordChangeApprovalDTO;
 import com.yash.usermanagement.dto.PasswordChangeRequestDTO;
 import com.yash.usermanagement.model.PasswordChangeRequest;
 import com.yash.usermanagement.model.UserDevice;
+import com.yash.usermanagement.model.Address;
 
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
@@ -46,7 +47,7 @@ public interface UserService {
     Mono<Void> approvePasswordChange(UUID userId, PasswordChangeApprovalDTO request);
 
     Mono<Void> rejectPasswordChange(UUID userId, UUID adminId);
-   
+
     Mono<Void> approveOrRejectPasswordChangeRequest(UUID requestId, PasswordChangeApprovalDTO approvalDTO);
 
     Flux<PasswordChangeRequest> getPendingPasswordChangeRequests();
@@ -58,4 +59,13 @@ public interface UserService {
     Flux<Map<String, Object>> getAllPendingPasswordChangeRequests();
 
     Flux<UserDevice> getUserDevices(UUID userId);
+
+    // Address management methods (moved from AddressService)
+    Mono<Address> createAddress(Address address);
+
+    Mono<Address> getAddressById(UUID id);
+
+    Mono<Address> updateAddress(UUID id, Address address);
+
+    Mono<Void> deleteAddress(UUID id);
 }
