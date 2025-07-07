@@ -65,6 +65,7 @@ import io.micronaut.http.context.ServerRequestContext;
 import jakarta.inject.Singleton;
 
 import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 @Singleton
 public class NotificationClientService {
@@ -82,42 +83,41 @@ public class NotificationClientService {
                 .map(req -> req.getHeaders().get(HttpHeaders.AUTHORIZATION));
     }
 
-    private void sendNotification(String path, Object request) {
-        MutableHttpRequest<Object> httpRequest = HttpRequest.POST(notificationServiceUrl + path, request);
-        getAuthorizationHeader().ifPresent(auth -> httpRequest.header(HttpHeaders.AUTHORIZATION, auth));
-        httpClient.toBlocking().exchange(httpRequest);
+    private Mono<Void> sendNotification(String path, Object request) {
+        return Mono.fromCallable(() -> {
+            MutableHttpRequest<Object> httpRequest = HttpRequest.POST(notificationServiceUrl + path, request);
+            getAuthorizationHeader().ifPresent(auth -> httpRequest.header(HttpHeaders.AUTHORIZATION, auth));
+            httpClient.toBlocking().exchange(httpRequest);
+            return null;
+        });
     }
 
-    // public void sendUserCreationNotification(User user) {
-    //     CreateNotificationRequest request = new CreateNotificationRequest(user.getId(), "Welcome " + user.getFirstName() + "!", "Your account has been created successfully.");
-    //     sendNotification("/api/notifications", request);
-    // }
-    public void sendUserCreationNotification(User user) {
-    CreateNotificationRequest request = new CreateNotificationRequest(
-        user.getId(),
-        "Welcome " + user.getFirstName() + "!",
-        "Your account has been created successfully."
-    );
-    sendNotification("/api/notifications/user-creation", request);
-}
+    public Mono<Void> sendUserCreationNotification(User user) {
+        CreateNotificationRequest request = new CreateNotificationRequest(
+            user.getId(),
+            "Welcome " + user.getFirstName() + "!",
+            "Your account has been created successfully."
+        );
+        return sendNotification("/api/notifications/user-creation", request);
+    }
 
-    public void sendAccountDeletionNotification(Object userId, String email) {
+    public Mono<Void> sendAccountDeletionNotification(Object userId, String email) {
         NotificationRequest request = new NotificationRequest(email, "Your account was deleted");
-        sendNotification("/notify/account-deletion", request);
+        return sendNotification("/notify/account-deletion", request);
     }
 
-    public void sendPasswordResetRequestNotification(Object userId, String email) {
+    public Mono<Void> sendPasswordResetRequestNotification(Object userId, String email) {
         NotificationRequest request = new NotificationRequest(email, "Your password reset request is pending approval");
-        sendNotification("/notify/password-reset-request", request);
+        return sendNotification("/notify/password-reset-request", request);
     }
 
-    public void sendPasswordResetApprovalNotification(Object userId, String email) {
+    public Mono<Void> sendPasswordResetApprovalNotification(Object userId, String email) {
         NotificationRequest request = new NotificationRequest(email, "Your password reset request has been approved.");
-        sendNotification("/notify/password-reset-approval", request);
+        return sendNotification("/notify/password-reset-approval", request);
     }
 
-    public void sendPasswordChangeRejectionNotification(Object userId, String email) {
+    public Mono<Void> sendPasswordChangeRejectionNotification(Object userId, String email) {
         NotificationRequest request = new NotificationRequest(email, "Your password reset request has been rejected.");
-        sendNotification("/notify/password-reset-rejection", request);
+        return sendNotification("/notify/password-reset-rejection", request);
     }
 }

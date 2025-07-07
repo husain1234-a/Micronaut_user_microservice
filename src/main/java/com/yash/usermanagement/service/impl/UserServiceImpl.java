@@ -57,7 +57,7 @@ public class UserServiceImpl implements UserService {
     @Inject
     public UserServiceImpl(UserRepository userRepository, AddressRepository addressRepository,
             PasswordChangeRequestRepository passwordChangeRequestRepository, UserDeviceRepository userDeviceRepository,
-            @Client("http://localhost:8080") HttpClient httpClient) {
+            @Client("http://localhost:8081") HttpClient httpClient) {
         this.userRepository = userRepository;
         this.addressRepository = addressRepository;
         this.passwordChangeRequestRepository = passwordChangeRequestRepository;
@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
                     // For now, assume address is set directly
                 }
                 return userRepository.save(user)
-                    .doOnSuccess(savedUser -> notificationClientService.sendUserCreationNotification(savedUser));
+                    .flatMap(savedUser -> notificationClientService.sendUserCreationNotification(savedUser).thenReturn(savedUser));
             }));
     }
 
@@ -116,7 +116,7 @@ public class UserServiceImpl implements UserService {
     public Mono<Void> deleteUser(UUID id) {
         return getUserById(id)
             .flatMap(user -> userRepository.deleteById(user.getId())
-                .then(Mono.fromRunnable(() -> notificationClientService.sendAccountDeletionNotification(user.getId(), user.getEmail()))));
+                .then(notificationClientService.sendAccountDeletionNotification(user.getId(), user.getEmail())));
     }
 
     @Override
@@ -143,7 +143,7 @@ public class UserServiceImpl implements UserService {
             .flatMap(user -> {
                 user.setPassword(newPassword);
                 return userRepository.update(user)
-                    .doOnSuccess(u -> notificationClientService.sendPasswordResetApprovalNotification(user.getId(), user.getEmail()));
+                    .flatMap(u -> notificationClientService.sendPasswordResetApprovalNotification(user.getId(), user.getEmail()));
             })
             .then();
     }
@@ -169,7 +169,7 @@ public class UserServiceImpl implements UserService {
                             passwordChangeRequest.setStatus(PasswordChangeStatus.PENDING);
                             passwordChangeRequest.setCreatedAt(LocalDateTime.now());
                             return passwordChangeRequestRepository.save(passwordChangeRequest)
-                                .doOnSuccess(pcr -> notificationClientService.sendPasswordResetRequestNotification(user.getId(), user.getEmail()))
+                                .flatMap(pcr -> notificationClientService.sendPasswordResetRequestNotification(user.getId(), user.getEmail()))
                                 .then();
                         });
                 })
@@ -194,7 +194,7 @@ public class UserServiceImpl implements UserService {
                                         passwordChangeRequest.setAdminId(request.getAdminId());
                                         passwordChangeRequest.setUpdatedAt(LocalDateTime.now());
                                         return passwordChangeRequestRepository.update(passwordChangeRequest)
-                                            .doOnSuccess(pcr -> notificationClientService.sendPasswordResetApprovalNotification(user.getId(), user.getEmail()))
+                                            .flatMap(pcr -> notificationClientService.sendPasswordResetApprovalNotification(user.getId(), user.getEmail()))
                                             .then();
                                     }));
                             } else {
@@ -204,7 +204,7 @@ public class UserServiceImpl implements UserService {
                                         passwordChangeRequest.setAdminId(request.getAdminId());
                                         passwordChangeRequest.setUpdatedAt(LocalDateTime.now());
                                         return passwordChangeRequestRepository.update(passwordChangeRequest)
-                                            .doOnSuccess(pcr -> notificationClientService.sendPasswordChangeRejectionNotification(user.getId(), user.getEmail()))
+                                            .flatMap(pcr -> notificationClientService.sendPasswordChangeRejectionNotification(user.getId(), user.getEmail()))
                                             .then();
                                     }));
                             }
@@ -228,7 +228,7 @@ public class UserServiceImpl implements UserService {
                             request.setAdminId(adminId);
                             request.setUpdatedAt(LocalDateTime.now());
                             return passwordChangeRequestRepository.update(request)
-                                .doOnSuccess(pcr -> notificationClientService.sendPasswordChangeRejectionNotification(user.getId(), user.getEmail()))
+                                .flatMap(pcr -> notificationClientService.sendPasswordChangeRejectionNotification(user.getId(), user.getEmail()))
                                 .then();
                         });
                 })
@@ -282,10 +282,22 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public Mono<Void> registerFcmToken(String token, String userEmail) {
         return userRepository.findByEmail(userEmail)
-            .flatMap(user -> {
-                // Implement FCM token registration logic here
-                return Mono.empty();
-            });
+            .switchIfEmpty(Mono.error(new ResourceNotFoundException("User not found with email: " + userEmail)))
+            .flatMap(user -> userDeviceRepository.findByUserId(user.getId())
+                .filter(device -> token.equals(device.getFcmToken()))
+                .hasElements()
+                .flatMap(alreadyRegistered -> {
+                    if (alreadyRegistered) {
+                        LOG.info("Token already registered for user: {}", userEmail);
+                        return Mono.empty();
+                    }
+                    UserDevice userDevice = new UserDevice();
+                    userDevice.setUserId(user.getId());
+                    userDevice.setFcmToken(token);
+                    userDevice.setCreatedAt(LocalDateTime.now());
+                    return userDeviceRepository.save(userDevice).then();
+                })
+            );
     }
 
     @Override
