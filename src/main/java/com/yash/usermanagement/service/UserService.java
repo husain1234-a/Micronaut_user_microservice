@@ -30,7 +30,7 @@ public interface UserService {
 
     Mono<User> updateUser(UUID id, User user);
 
-    Mono<Void> deleteUser(UUID id);
+    Mono<Void> deleteUser(UUID id, String authorization);
 
     Mono<User> findByEmail(String email);
 
@@ -68,4 +68,6 @@ public interface UserService {
     Mono<Address> updateAddress(UUID id, Address address);
 
     Mono<Void> deleteAddress(UUID id);
+
+    <T> Mono<T> sendUserCreationNotification(User savedUser, String authorization);
 }

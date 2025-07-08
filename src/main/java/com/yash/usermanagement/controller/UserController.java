@@ -39,6 +39,9 @@ import com.yash.usermanagement.dto.UpdateAddressRequest;
 import com.yash.usermanagement.model.Address;
 import com.yash.usermanagement.exception.ResourceNotFoundException;
 import com.yash.usermanagement.exception.ValidationException;
+import com.yash.usermanagement.exception.NotificationFailedException;
+import com.yash.usermanagement.dto.UserCreationResponse;
+import io.micronaut.http.HttpHeaders;
 import reactor.core.publisher.Mono;
 
 @Controller("/api/users")
@@ -55,12 +58,17 @@ public class UserController {
     @Post
     @Operation(summary = "Create a new user")
     @Secured("ADMIN")
-    public Mono<HttpResponse<UserResponse>> createUser(@Body @Valid CreateUserRequest request) {
+    public Mono<HttpResponse<UserCreationResponse>> createUser(@Body @Valid CreateUserRequest request, @Header(HttpHeaders.AUTHORIZATION) String authorization) {
         LOG.info("Creating new user with role: {}", request.getRole());
         User user = convertToUser(request);
         return userService.createUser(user)
-                .map(this::convertToUserResponse)
-                .map(HttpResponse::created);
+                .flatMap(savedUser -> userService.sendUserCreationNotification(savedUser, authorization)
+                        .thenReturn(HttpResponse.created(new UserCreationResponse(convertToUserResponse(savedUser), null)))
+                        .onErrorResume(NotificationFailedException.class, e -> {
+                            LOG.warn("User created, but notification failed: {}", e.getMessage());
+                            return Mono.just(HttpResponse.created(new UserCreationResponse(convertToUserResponse(savedUser), e.getMessage())));
+                        })
+                );
     }
 
     @Get
@@ -96,10 +104,17 @@ public class UserController {
     @Delete("/{id}")
     @Operation(summary = "Delete user")
     @Secured({ "ADMIN", "USER" })
-    public Mono<MutableHttpResponse<Map<String, Boolean>>> deleteUser(@PathVariable UUID id) {
+    public Mono<MutableHttpResponse<Map<String, Object>>> deleteUser(@PathVariable UUID id, @Header(HttpHeaders.AUTHORIZATION) String authorization) {
         LOG.info("Deleting user with id: {}", id);
-        return userService.deleteUser(id)
-                .thenReturn(HttpResponse.ok(Collections.singletonMap("success", true)));
+        return userService.deleteUser(id, authorization)
+                .thenReturn(HttpResponse.ok(Collections.<String, Object>singletonMap("success", true)))
+                .onErrorResume(NotificationFailedException.class, e -> {
+                    LOG.warn("User deleted, but notification failed: {}", e.getMessage());
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", true);
+                    response.put("message", e.getMessage());
+                    return Mono.just(HttpResponse.ok(response));
+                });
     }
 
     @Get("/email/{email}")

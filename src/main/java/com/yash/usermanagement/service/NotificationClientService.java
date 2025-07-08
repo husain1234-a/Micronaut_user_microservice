@@ -83,41 +83,40 @@ public class NotificationClientService {
                 .map(req -> req.getHeaders().get(HttpHeaders.AUTHORIZATION));
     }
 
-    private Mono<Void> sendNotification(String path, Object request) {
-        return Mono.fromCallable(() -> {
-            MutableHttpRequest<Object> httpRequest = HttpRequest.POST(notificationServiceUrl + path, request);
-            getAuthorizationHeader().ifPresent(auth -> httpRequest.header(HttpHeaders.AUTHORIZATION, auth));
-            httpClient.toBlocking().exchange(httpRequest);
-            return null;
-        });
+    private Mono<Void> sendNotification(String path, Object request, String authorization) {
+        MutableHttpRequest<Object> httpRequest = HttpRequest.POST(notificationServiceUrl + path, request);
+        if (authorization != null) {
+            httpRequest.header(HttpHeaders.AUTHORIZATION, authorization);
+        }
+        return Mono.from(httpClient.exchange(httpRequest)).then();
     }
 
-    public Mono<Void> sendUserCreationNotification(User user) {
+    public Mono<Void> sendUserCreationNotification(User user, String authorization) {
         CreateNotificationRequest request = new CreateNotificationRequest(
             user.getId(),
             "Welcome " + user.getFirstName() + "!",
             "Your account has been created successfully."
         );
-        return sendNotification("/api/notifications/user-creation", request);
+        return sendNotification("/api/notifications/user-creation", request, authorization);
     }
 
-    public Mono<Void> sendAccountDeletionNotification(Object userId, String email) {
+    public Mono<Void> sendAccountDeletionNotification(Object userId, String email, String authorization) {
         NotificationRequest request = new NotificationRequest(email, "Your account was deleted");
-        return sendNotification("/notify/account-deletion", request);
+        return sendNotification("/notify/account-deletion", request, authorization);
     }
 
     public Mono<Void> sendPasswordResetRequestNotification(Object userId, String email) {
         NotificationRequest request = new NotificationRequest(email, "Your password reset request is pending approval");
-        return sendNotification("/notify/password-reset-request", request);
+        return sendNotification("/notify/password-reset-request", request, null); // No specific authorization needed for this one
     }
 
     public Mono<Void> sendPasswordResetApprovalNotification(Object userId, String email) {
         NotificationRequest request = new NotificationRequest(email, "Your password reset request has been approved.");
-        return sendNotification("/notify/password-reset-approval", request);
+        return sendNotification("/notify/password-reset-approval", request, null); // No specific authorization needed for this one
     }
 
     public Mono<Void> sendPasswordChangeRejectionNotification(Object userId, String email) {
         NotificationRequest request = new NotificationRequest(email, "Your password reset request has been rejected.");
-        return sendNotification("/notify/password-reset-rejection", request);
+        return sendNotification("/notify/password-reset-rejection", request, null); // No specific authorization needed for this one
     }
 }
