@@ -41,6 +41,8 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
+import io.micronaut.cache.annotation.Cacheable;
+import io.micronaut.cache.annotation.CacheInvalidate;
 
 @Singleton
 public class UserServiceImpl implements UserService {
@@ -74,6 +76,7 @@ public class UserServiceImpl implements UserService {
     @Auditable
     @Timed
     @ExecuteOn(TaskExecutors.BLOCKING)
+    @CacheInvalidate("users-all")
     public Mono<User> createUser(User user) {
         return userRepository.findByEmail(user.getEmail())
                 .flatMap(existingUser -> Mono
@@ -90,10 +93,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<Void> sendUserCreationNotification(User user, String authorization) {
         return notificationClientService.sendUserCreationNotification(user, authorization)
-            .onErrorResume(e -> {
-                LOG.error("Notification failed for user creation: {}", e.getMessage(), e);
-                return Mono.error(new NotificationFailedException("User created, but notification could not be sent.", e));
-            });
+                .onErrorResume(e -> {
+                    LOG.error("Notification failed for user creation: {}", e.getMessage(), e);
+                    return Mono.error(
+                            new NotificationFailedException("User created, but notification could not be sent.", e));
+                });
     }
 
     @Override
@@ -103,11 +107,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Mono<User> getUserById(UUID id) {
-            return userRepository.findById(id)
+        return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("User not found with id: " + id)));
     }
 
     @Override
+    @CacheInvalidate("users-all")
     public Mono<User> updateUser(UUID id, User userDetails) {
         return getUserById(id).flatMap(existingUser -> {
             // Address logic should be made reactive if AddressRepository is reactive
@@ -123,17 +128,20 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheInvalidate("users-all")
     public Mono<Void> deleteUser(UUID id, String authorization) {
         return getUserById(id)
-            // .flatMap(user -> notificationClientService.sendAccountDeletionNotification(user.getId(), user.getEmail(), authorization)
-            //     .onErrorResume(e -> {
-            //         LOG.error("Notification failed for user deletion: {}", e.getMessage(), e);
-            //         // Continue with deletion even if notification fails
-            //         return Mono.empty();
-            //     })
-            //     .then(userRepository.deleteById(user.getId()).then())
-            // )
-            .flatMap(user -> userRepository.deleteById(user.getId()).then());
+                // .flatMap(user ->
+                // notificationClientService.sendAccountDeletionNotification(user.getId(),
+                // user.getEmail(), authorization)
+                // .onErrorResume(e -> {
+                // LOG.error("Notification failed for user deletion: {}", e.getMessage(), e);
+                // // Continue with deletion even if notification fails
+                // return Mono.empty();
+                // })
+                // .then(userRepository.deleteById(user.getId()).then())
+                // )
+                .flatMap(user -> userRepository.deleteById(user.getId()).then());
     }
 
     @Override
@@ -158,7 +166,7 @@ public class UserServiceImpl implements UserService {
     public Mono<Void> changePassword(UUID userId, String newPassword) {
         return userRepository.findById(userId)
                 .flatMap(user -> {
-                                user.setPassword(newPassword);
+                    user.setPassword(newPassword);
                     return userRepository.update(user)
                             .flatMap(u -> notificationClientService.sendPasswordResetApprovalNotification(user.getId(),
                                     user.getEmail()));
@@ -181,11 +189,11 @@ public class UserServiceImpl implements UserService {
                                         if (!isValid) {
                                             return Mono.error(new ValidationException("Current password is incorrect"));
                                         }
-                    PasswordChangeRequest passwordChangeRequest = new PasswordChangeRequest();
-                    passwordChangeRequest.setUserId(id);
-                    passwordChangeRequest.setNewPassword(request.getNewPassword());
-                    passwordChangeRequest.setStatus(PasswordChangeStatus.PENDING);
-                    passwordChangeRequest.setCreatedAt(LocalDateTime.now());
+                                        PasswordChangeRequest passwordChangeRequest = new PasswordChangeRequest();
+                                        passwordChangeRequest.setUserId(id);
+                                        passwordChangeRequest.setNewPassword(request.getNewPassword());
+                                        passwordChangeRequest.setStatus(PasswordChangeStatus.PENDING);
+                                        passwordChangeRequest.setCreatedAt(LocalDateTime.now());
                                         return passwordChangeRequestRepository.save(passwordChangeRequest)
                                                 .doOnSuccess(pcr -> notificationClientService
                                                         .sendPasswordResetRequestNotification(user.getId(),
@@ -200,19 +208,19 @@ public class UserServiceImpl implements UserService {
     public Mono<Void> approvePasswordChange(UUID id, PasswordChangeApprovalDTO request) {
         return getUserById(request.getAdminId())
                 .flatMap(admin -> {
-            if (admin.getRole() != UserRole.ADMIN) {
+                    if (admin.getRole() != UserRole.ADMIN) {
                         return Mono.error(new ValidationException("Only admin can approve password changes"));
                     }
                     return getUserById(id)
                             .flatMap(user -> passwordChangeRequestRepository
-                    .findByUserIdAndStatus(id, PasswordChangeStatus.PENDING)
+                                    .findByUserIdAndStatus(id, PasswordChangeStatus.PENDING)
                                     .flatMap(passwordChangeRequest -> {
-            if (request.isApproved()) {
+                                        if (request.isApproved()) {
                                             return changePassword(id, passwordChangeRequest.getNewPassword())
                                                     .then(Mono.defer(() -> {
-                passwordChangeRequest.setStatus(PasswordChangeStatus.APPROVED);
-                passwordChangeRequest.setAdminId(request.getAdminId());
-                passwordChangeRequest.setUpdatedAt(LocalDateTime.now());
+                                                        passwordChangeRequest.setStatus(PasswordChangeStatus.APPROVED);
+                                                        passwordChangeRequest.setAdminId(request.getAdminId());
+                                                        passwordChangeRequest.setUpdatedAt(LocalDateTime.now());
                                                         return passwordChangeRequestRepository
                                                                 .update(passwordChangeRequest)
                                                                 .flatMap(pcr -> notificationClientService
@@ -220,12 +228,12 @@ public class UserServiceImpl implements UserService {
                                                                                 user.getId(), user.getEmail()))
                                                                 .then();
                                                     }));
-            } else {
+                                        } else {
                                             return rejectPasswordChange(id, request.getAdminId())
                                                     .then(Mono.defer(() -> {
-                passwordChangeRequest.setStatus(PasswordChangeStatus.REJECTED);
-                passwordChangeRequest.setAdminId(request.getAdminId());
-                passwordChangeRequest.setUpdatedAt(LocalDateTime.now());
+                                                        passwordChangeRequest.setStatus(PasswordChangeStatus.REJECTED);
+                                                        passwordChangeRequest.setAdminId(request.getAdminId());
+                                                        passwordChangeRequest.setUpdatedAt(LocalDateTime.now());
                                                         return passwordChangeRequestRepository
                                                                 .update(passwordChangeRequest)
                                                                 .flatMap(pcr -> notificationClientService
@@ -244,15 +252,15 @@ public class UserServiceImpl implements UserService {
         return getUserById(userId)
                 .flatMap(user -> getUserById(adminId)
                         .flatMap(admin -> {
-            if (admin.getRole() != UserRole.ADMIN) {
+                            if (admin.getRole() != UserRole.ADMIN) {
                                 return Mono.error(new ValidationException("Only admin can reject password changes"));
-            }
+                            }
                             return passwordChangeRequestRepository
-                    .findByUserIdAndStatus(userId, PasswordChangeStatus.PENDING)
+                                    .findByUserIdAndStatus(userId, PasswordChangeStatus.PENDING)
                                     .flatMap(request -> {
-            request.setStatus(PasswordChangeStatus.REJECTED);
-            request.setAdminId(adminId);
-            request.setUpdatedAt(LocalDateTime.now());
+                                        request.setStatus(PasswordChangeStatus.REJECTED);
+                                        request.setAdminId(adminId);
+                                        request.setUpdatedAt(LocalDateTime.now());
                                         return passwordChangeRequestRepository.update(request)
                                                 .flatMap(pcr -> notificationClientService
                                                         .sendPasswordChangeRejectionNotification(user.getId(),
@@ -264,7 +272,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Flux<PasswordChangeRequest> getPendingPasswordChangeRequests() {
-            return passwordChangeRequestRepository.findByStatus(PasswordChangeStatus.PENDING);
+        return passwordChangeRequestRepository.findByStatus(PasswordChangeStatus.PENDING);
     }
 
     @Override
@@ -272,7 +280,7 @@ public class UserServiceImpl implements UserService {
         return passwordChangeRequestRepository.findByStatus(PasswordChangeStatus.PENDING)
                 .flatMap(request -> getUserById(request.getUserId())
                         .map(user -> {
-                Map<String, Object> map = new HashMap<>();
+                            Map<String, Object> map = new HashMap<>();
                             map.put("id", request.getId());
                             map.put("userId", request.getUserId());
                             map.put("newPassword", request.getNewPassword());
@@ -280,10 +288,10 @@ public class UserServiceImpl implements UserService {
                             map.put("adminId", request.getAdminId());
                             map.put("createdAt", request.getCreatedAt());
                             map.put("updatedAt", request.getUpdatedAt());
-                    map.put("userFirstName", user.getFirstName());
-                    map.put("userLastName", user.getLastName());
-                    map.put("userEmail", user.getEmail());
-                return map;
+                            map.put("userFirstName", user.getFirstName());
+                            map.put("userLastName", user.getLastName());
+                            map.put("userEmail", user.getEmail());
+                            return map;
                         })
                         .onErrorResume(e -> Mono.just(new HashMap<>())));
     }
@@ -295,7 +303,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Mono<PasswordChangeRequest> getPasswordChangeRequestByUserId(UUID userId) {
-            return passwordChangeRequestRepository.findByUserIdAndStatus(userId, PasswordChangeStatus.PENDING);
+        return passwordChangeRequestRepository.findByUserIdAndStatus(userId, PasswordChangeStatus.PENDING);
     }
 
     @Override
@@ -314,14 +322,14 @@ public class UserServiceImpl implements UserService {
                         .filter(device -> token.equals(device.getFcmToken()))
                         .hasElements()
                         .flatMap(alreadyRegistered -> {
-        if (alreadyRegistered) {
-            LOG.info("Token already registered for user: {}", userEmail);
+                            if (alreadyRegistered) {
+                                LOG.info("Token already registered for user: {}", userEmail);
                                 return Mono.empty();
-        }
-        UserDevice userDevice = new UserDevice();
-        userDevice.setUserId(user.getId());
-        userDevice.setFcmToken(token);
-        userDevice.setCreatedAt(LocalDateTime.now());
+                            }
+                            UserDevice userDevice = new UserDevice();
+                            userDevice.setUserId(user.getId());
+                            userDevice.setFcmToken(token);
+                            userDevice.setCreatedAt(LocalDateTime.now());
                             return userDeviceRepository.save(userDevice).then();
                         }));
     }
@@ -332,7 +340,7 @@ public class UserServiceImpl implements UserService {
         return passwordChangeRequestRepository.findById(requestId)
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("Password change request not found")))
                 .flatMap(request -> {
-        if (approvalDTO.isApproved()) {
+                    if (approvalDTO.isApproved()) {
                         return approvePasswordChange(request.getUserId(), approvalDTO);
                     } else {
                         return rejectPasswordChange(request.getUserId(), approvalDTO.getAdminId());
@@ -341,6 +349,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable("users-all")
     public Mono<Page<User>> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
@@ -394,7 +403,7 @@ public class UserServiceImpl implements UserService {
                         return addressRepository.deleteById(id)
                                 .doOnSuccess(v -> LOG.info("Address deleted successfully with ID: {}", id))
                                 .then();
-        } else {
+                    } else {
                         LOG.warn("Address not found with ID: {}", id);
                         return Mono.error(new ResourceNotFoundException("Address not found with ID: " + id));
                     }

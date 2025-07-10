@@ -115,3 +115,7 @@ r2dbc:
       password: admin123
       pool:
         enabled: true
+
+caches:
+  users-all:
+    expire-after-write: 5m
