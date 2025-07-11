@@ -72,6 +72,8 @@ micronaut:
         exposedHeaders: "*"
         allowCredentials: true
         maxAge: 3600
+  metrics:
+    enabled: true
 logger:
   levels:
     io.micronaut.security: TRACE
