@@ -36,10 +36,6 @@ micronaut:
       dialect: POSTGRES
   security:
     enabled: true
-    endpoints:
-      metrics:
-        enabled: true
-        sensitive: false
     token:
       jwt:
         enabled: true
@@ -76,13 +72,23 @@ micronaut:
         exposedHeaders: "*"
         allowCredentials: true
         maxAge: 3600
-  # metrics:
-  #   enabled: true
+  metrics:
+    enabled: true
 logger:
   levels:
     io.micronaut.security: TRACE
     io.micronaut.security.rules: TRACE
     com.yash.usermanagement: DEBUG
+
+consul:
+  client:
+    host: localhost
+    port: 8500
+    registration:
+      enabled: true
+    discovery:
+      enabled: true
+    defaultZone: "${CONSUL_HOST:localhost}:${CONSUL_PORT:8500}"
  
 # DynamoDB Configuration
 dynamodb:

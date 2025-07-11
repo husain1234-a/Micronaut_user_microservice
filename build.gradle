@@ -40,7 +40,11 @@ dependencies {
     implementation("io.micronaut.security:micronaut-security")
     implementation("io.micronaut.security:micronaut-security-jwt")
     implementation("io.micronaut.security:micronaut-security-annotations")
-    
+
+    //Dependencies for consul
+    implementation("io.micronaut.discovery:micronaut-discovery-client")
+
+
     // DynamoDB dependencies
     implementation("io.micronaut.aws:micronaut-aws-sdk-v2")
     implementation("io.micronaut.aws:micronaut-aws-parameter-store")
