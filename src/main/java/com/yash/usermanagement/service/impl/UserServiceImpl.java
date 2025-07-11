@@ -351,6 +351,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Cacheable("users-all")
     public Mono<Page<User>> getAllUsers(Pageable pageable) {
+        LOG.info("Fetching users from DB...");
         return userRepository.findAll(pageable);
     }
 
