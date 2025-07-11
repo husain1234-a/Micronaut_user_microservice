@@ -2,6 +2,7 @@ package com.yash.usermanagement.service;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.List;
 
 import com.yash.usermanagement.dto.UserDeviceDto;
 import com.yash.usermanagement.model.User;
@@ -22,9 +23,7 @@ public interface UserService {
 
     // List<User> getAllUsers();
 
-    Flux<User> getAllUsers();
-
-    Mono<Page<User>> getAllUsers(Pageable pageable);
+    Mono<List<User>> getAllUsers();
 
     Mono<User> getUserById(UUID id);
 

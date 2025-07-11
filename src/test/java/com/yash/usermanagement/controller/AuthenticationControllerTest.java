@@ -76,4 +76,4 @@ class AuthenticationControllerTest {
                 principal);
         assertEquals(HttpStatus.OK, response.block().getStatus());
     }
-}
+} 

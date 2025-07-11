@@ -58,27 +58,27 @@ public class UserController {
     @Post
     @Operation(summary = "Create a new user")
     @Secured("ADMIN")
-    public Mono<HttpResponse<UserCreationResponse>> createUser(@Body @Valid CreateUserRequest request, @Header(HttpHeaders.AUTHORIZATION) String authorization) {
+    public Mono<HttpResponse<UserCreationResponse>> createUser(@Body @Valid CreateUserRequest request,
+            @Header(HttpHeaders.AUTHORIZATION) String authorization) {
         LOG.info("Creating new user with role: {}", request.getRole());
         User user = convertToUser(request);
         return userService.createUser(user)
                 .flatMap(savedUser -> userService.sendUserCreationNotification(savedUser, authorization)
-                        .thenReturn(HttpResponse.created(new UserCreationResponse(convertToUserResponse(savedUser), null)))
+                        .thenReturn(
+                                HttpResponse.created(new UserCreationResponse(convertToUserResponse(savedUser), null)))
                         .onErrorResume(NotificationFailedException.class, e -> {
                             LOG.warn("User created, but notification failed: {}", e.getMessage());
-                            return Mono.just(HttpResponse.created(new UserCreationResponse(convertToUserResponse(savedUser), e.getMessage())));
-                        })
-                );
+                            return Mono.just(HttpResponse.created(
+                                    new UserCreationResponse(convertToUserResponse(savedUser), e.getMessage())));
+                        }));
     }
 
     @Get
-    @Operation(summary = "Get all users (paginated)")
+    @Operation(summary = "Get all users")
     @Secured("ADMIN")
-    public Mono<Page<UserResponse>> getAllUsers(@QueryValue(defaultValue = "0") int page,
-            @QueryValue(defaultValue = "2") int size) {
-        Pageable pageable = Pageable.from(page, size);
-        return userService.getAllUsers(pageable)
-                .map(userPage -> userPage.map(this::convertToUserResponse));
+    public Mono<List<UserResponse>> getAllUsers() {
+        return userService.getAllUsers()
+                .map(users -> users.stream().map(this::convertToUserResponse).toList());
     }
 
     @Get("/{id}")
@@ -104,7 +104,8 @@ public class UserController {
     @Delete("/{id}")
     @Operation(summary = "Delete user")
     @Secured({ "ADMIN", "USER" })
-    public Mono<MutableHttpResponse<Map<String, Object>>> deleteUser(@PathVariable UUID id, @Header(HttpHeaders.AUTHORIZATION) String authorization) {
+    public Mono<MutableHttpResponse<Map<String, Object>>> deleteUser(@PathVariable UUID id,
+            @Header(HttpHeaders.AUTHORIZATION) String authorization) {
         LOG.info("Deleting user with id: {}", id);
         return userService.deleteUser(id, authorization)
                 .thenReturn(HttpResponse.ok(Collections.<String, Object>singletonMap("success", true)))

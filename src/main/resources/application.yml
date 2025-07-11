@@ -36,6 +36,10 @@ micronaut:
       dialect: POSTGRES
   security:
     enabled: true
+    endpoints:
+      metrics:
+        enabled: true
+        sensitive: false
     token:
       jwt:
         enabled: true
@@ -72,8 +76,8 @@ micronaut:
         exposedHeaders: "*"
         allowCredentials: true
         maxAge: 3600
-  metrics:
-    enabled: true
+  # metrics:
+  #   enabled: true
 logger:
   levels:
     io.micronaut.security: TRACE

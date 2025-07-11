@@ -101,11 +101,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Flux<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    @Override
     public Mono<User> getUserById(UUID id) {
         return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("User not found with id: " + id)));
@@ -350,9 +345,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Cacheable("users-all")
-    public Mono<Page<User>> getAllUsers(Pageable pageable) {
+    public Mono<List<User>> getAllUsers() {
         LOG.info("Fetching users from DB...");
-        return userRepository.findAll(pageable);
+        return userRepository.findAll().collectList();
     }
 
     // Address management methods (moved from AddressServiceImpl)
