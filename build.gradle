@@ -76,6 +76,12 @@ dependencies {
     implementation("org.postgresql:r2dbc-postgresql:1.0.2.RELEASE")
     runtimeOnly("org.postgresql:r2dbc-postgresql:1.0.2.RELEASE")
 
+    // micrometer dependency
+    implementation("io.micrometer:micrometer-core:1.15.1")
+    implementation("io.micronaut.configuration:micronaut-micrometer-core")
+    implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
+
+
     // test case 
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("org.junit.jupiter:junit-jupiter-api")

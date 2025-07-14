@@ -74,6 +74,18 @@ micronaut:
         maxAge: 3600
   metrics:
     enabled: true
+    export:
+      prometheus:
+        enabled: true
+        step: PT1M
+        descriptions: true
+        path: /prometheus
+  binders:
+    files:
+      enabled: true
+    jvm:
+      enabled: true
+
 logger:
   levels:
     io.micronaut.security: TRACE

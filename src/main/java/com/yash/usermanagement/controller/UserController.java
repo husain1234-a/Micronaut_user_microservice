@@ -25,6 +25,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.annotation.Counted;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.*;
@@ -58,6 +60,7 @@ public class UserController {
     @Post
     @Operation(summary = "Create a new user")
     @Secured("ADMIN")
+    @Timed("User.createUser")
     public Mono<HttpResponse<UserCreationResponse>> createUser(@Body @Valid CreateUserRequest request,
             @Header(HttpHeaders.AUTHORIZATION) String authorization) {
         LOG.info("Creating new user with role: {}", request.getRole());
@@ -76,6 +79,7 @@ public class UserController {
     @Get
     @Operation(summary = "Get all users")
     @Secured("ADMIN")
+    @Counted("User.getAllUsers")
     public Mono<List<UserResponse>> getAllUsers() {
         return userService.getAllUsers()
                 .map(users -> users.stream().map(this::convertToUserResponse).toList());
