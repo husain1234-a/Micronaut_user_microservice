@@ -76,7 +76,7 @@ public class UserServiceImpl implements UserService {
     @Auditable
     @Timed
     @ExecuteOn(TaskExecutors.BLOCKING)
-    @CacheInvalidate("users-all")
+    @CacheInvalidate(value = "users-all", all = true)
     public Mono<User> createUser(User user) {
         return userRepository.findByEmail(user.getEmail())
                 .flatMap(existingUser -> Mono
@@ -107,7 +107,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @CacheInvalidate("users-all")
+    @CacheInvalidate(value = "users-all", all = true)
     public Mono<User> updateUser(UUID id, User userDetails) {
         return getUserById(id).flatMap(existingUser -> {
             // Address logic should be made reactive if AddressRepository is reactive
@@ -123,7 +123,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @CacheInvalidate("users-all")
+    @CacheInvalidate(value = "users-all", all = true)
     public Mono<Void> deleteUser(UUID id, String authorization) {
         return getUserById(id)
                 // .flatMap(user ->

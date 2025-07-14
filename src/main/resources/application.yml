@@ -80,15 +80,15 @@ logger:
     io.micronaut.security.rules: TRACE
     com.yash.usermanagement: DEBUG
 
-consul:
-  client:
-    host: localhost
-    port: 8500
-    registration:
-      enabled: true
-    discovery:
-      enabled: true
-    defaultZone: "${CONSUL_HOST:localhost}:${CONSUL_PORT:8500}"
+#consul:
+#  client:
+#    host: localhost
+#    port: 8500
+#    registration:
+#      enabled: true
+#    discovery:
+#      enabled: true
+#    defaultZone: "${CONSUL_HOST:localhost}:${CONSUL_PORT:8500}"
  
 # DynamoDB Configuration
 dynamodb:
