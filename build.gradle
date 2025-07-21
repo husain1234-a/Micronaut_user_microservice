@@ -78,7 +78,7 @@ dependencies {
 
     // micrometer dependency
     implementation("io.micrometer:micrometer-core:1.15.1")
-    implementation("io.micronaut.configuration:micronaut-micrometer-core")
+//    implementation("io.micronaut.configuration:micronaut-micrometer-core")
     implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
 
 

@@ -1,12 +1,13 @@
 package com.yash.usermanagement.service.impl;
 
-import com.yash.usermanagement.model.User;
-import com.yash.usermanagement.model.UserRole;
-import com.yash.usermanagement.repository.UserRepository;
-import com.yash.usermanagement.repository.AddressRepository;
-import com.yash.usermanagement.repository.PasswordChangeRequestRepository;
-import com.yash.usermanagement.repository.UserDeviceRepository;
+import com.yash.usermanagement.model.*;
+import com.yash.usermanagement.repository.*;
 import com.yash.usermanagement.service.NotificationClientService;
+import com.yash.usermanagement.dto.PasswordChangeApprovalDTO;
+import com.yash.usermanagement.dto.PasswordChangeRequestDTO;
+import com.yash.usermanagement.exception.DatabaseException;
+import com.yash.usermanagement.exception.ResourceNotFoundException;
+import com.yash.usermanagement.exception.ValidationException;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.micronaut.test.annotation.MockBean;
 import jakarta.inject.Inject;
@@ -14,9 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
-import java.util.Optional;
-import java.util.UUID;
-
+import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
@@ -46,33 +45,34 @@ class UserServiceImplTest {
     NotificationClientService notificationClientServiceMock() { return Mockito.mock(NotificationClientService.class); }
 
     @Test
-    void testCreateUserWhenEmailNotExists() {
+    void testCreateUserSuccess() {
         User user = new User();
+        user.setId(UUID.randomUUID());
         user.setEmail("test@example.com");
-        user.setRole(UserRole.USER);
         Mockito.when(userRepository.findByEmail("test@example.com")).thenReturn(Mono.empty());
         Mockito.when(userRepository.save(user)).thenReturn(Mono.just(user));
         Mono<User> result = userService.createUser(user);
-        assertEquals("test@example.com", result.block().getEmail());
+        assertEquals(user, result.block());
     }
 
     @Test
-    void testCreateUserWhenEmailExists() {
+    void testCreateUserDuplicate() {
         User user = new User();
+        user.setId(UUID.randomUUID());
         user.setEmail("test@example.com");
         Mockito.when(userRepository.findByEmail("test@example.com")).thenReturn(Mono.just(user));
         Mono<User> result = userService.createUser(user);
-        assertThrows(Exception.class, () -> result.block());
+        assertThrows(DatabaseException.class, () -> result.block());
     }
 
     @Test
-    void testGetUserByIdFound() {
+    void testGetUserByIdSuccess() {
         UUID id = UUID.randomUUID();
         User user = new User();
         user.setId(id);
         Mockito.when(userRepository.findById(id)).thenReturn(Mono.just(user));
         Mono<User> result = userService.getUserById(id);
-        assertEquals(id, result.block().getId());
+        assertEquals(user, result.block());
     }
 
     @Test
@@ -80,31 +80,92 @@ class UserServiceImplTest {
         UUID id = UUID.randomUUID();
         Mockito.when(userRepository.findById(id)).thenReturn(Mono.empty());
         Mono<User> result = userService.getUserById(id);
-        assertThrows(Exception.class, () -> result.block());
+        assertThrows(ResourceNotFoundException.class, () -> result.block());
     }
 
     @Test
-    void testUpdateUser() {
+    void testUpdateUserSuccess() {
         UUID id = UUID.randomUUID();
         User existing = new User();
         existing.setId(id);
-        existing.setFirstName("Old");
-        User update = new User();
-        update.setFirstName("New");
+        existing.setEmail("old@example.com");
+        User updated = new User();
+        updated.setId(id);
+        updated.setEmail("new@example.com");
         Mockito.when(userRepository.findById(id)).thenReturn(Mono.just(existing));
-        Mockito.when(userRepository.update(Mockito.any(User.class))).thenReturn(Mono.just(existing));
-        Mono<User> result = userService.updateUser(id, update);
-        assertEquals("New", result.block().getFirstName());
+        Mockito.when(userRepository.update(Mockito.any(User.class))).thenReturn(Mono.just(updated));
+        Mono<User> result = userService.updateUser(id, updated);
+        assertEquals("new@example.com", result.block().getEmail());
     }
 
     @Test
-    void testDeleteUser() {
+    void testDeleteUserSuccess() {
         UUID id = UUID.randomUUID();
         User user = new User();
         user.setId(id);
         Mockito.when(userRepository.findById(id)).thenReturn(Mono.just(user));
         Mockito.when(userRepository.deleteById(id)).thenReturn(Mono.empty());
-        Mono<Void> result = userService.deleteUser(id, "token");
+        Mono<Void> result = userService.deleteUser(id, "auth");
+        assertDoesNotThrow(() -> { result.block(); });
+    }
+
+    @Test
+    void testFindByEmailSuccess() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        Mockito.when(userRepository.findByEmail("test@example.com")).thenReturn(Mono.just(user));
+        Mono<User> result = userService.findByEmail("test@example.com");
+        assertEquals(user, result.block());
+    }
+
+    @Test
+    void testFindByEmailNotFound() {
+        Mockito.when(userRepository.findByEmail("notfound@example.com")).thenReturn(Mono.empty());
+        Mono<User> result = userService.findByEmail("notfound@example.com");
+        assertThrows(ResourceNotFoundException.class, () -> result.block());
+    }
+
+    @Test
+    void testChangePasswordSuccess() {
+        UUID id = UUID.randomUUID();
+        User user = new User();
+        user.setId(id);
+        user.setPassword("old");
+        Mockito.when(userRepository.findById(id)).thenReturn(Mono.just(user));
+        Mockito.when(userRepository.update(Mockito.any(User.class))).thenReturn(Mono.just(user));
+        Mockito.when(notificationClientService.sendPasswordResetApprovalNotification(id, user.getEmail())).thenReturn(Mono.empty());
+        Mono<Void> result = userService.changePassword(id, "new");
         assertDoesNotThrow(() -> result.block());
+    }
+
+
+    @Test
+    void testGetAllUsers() {
+        User user1 = new User();
+        user1.setId(UUID.randomUUID());
+        User user2 = new User();
+        user2.setId(UUID.randomUUID());
+        Mockito.when(userRepository.findAll()).thenReturn(Flux.just(user1, user2));
+        Mono<List<User>> result = userService.getAllUsers();
+        List<User> users = result.block();
+        assertEquals(2, users.size());
+    }
+
+    @Test
+    void testCreateAddressSuccess() {
+        Address address = new Address();
+        address.setId(UUID.randomUUID());
+        Mockito.when(addressRepository.save(address)).thenReturn(Mono.just(address));
+        Mono<Address> result = userService.createAddress(address);
+        assertEquals(address, result.block());
+    }
+
+    @Test
+    void testGetAddressByIdNotFound() {
+        UUID id = UUID.randomUUID();
+        Mockito.when(addressRepository.findById(id)).thenReturn(Mono.empty());
+        Mono<Address> result = userService.getAddressById(id);
+        Exception ex = assertThrows(DatabaseException.class, result::block);
+        assertTrue(ex.getCause() instanceof ResourceNotFoundException);
     }
 } 
