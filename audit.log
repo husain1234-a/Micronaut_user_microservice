@@ -199,3 +199,12 @@
 2025-07-21 12:18:30 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@17813360] | Timestamp: 1753080510405
 2025-07-21 12:18:32 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@b6aee61] | Timestamp: 1753080512596
 2025-07-21 12:18:35 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@11007cf9] | Timestamp: 1753080515052
+2025-07-21 14:59:05 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@4ca87515] | Timestamp: 1753090145490
+2025-07-21 14:59:49 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@6c076c90] | Timestamp: 1753090189488
+2025-07-22 12:13:01 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@4a04af4] | Timestamp: 1753166581759
+2025-07-22 12:13:06 INFO  AUDIT_LOGGER - [AUDIT] Method: UserServiceImpl.createUser | Args: [com.yash.usermanagement.model.User@7dd7f28c] | Timestamp: 1753166586556
+2025-07-22 12:14:26 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.logout | Args: [invalid.jwt.token] | Timestamp: 1753166666689
+2025-07-22 12:14:26 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@201d18de] | Timestamp: 1753166666968
+2025-07-22 12:14:27 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@54309721] | Timestamp: 1753166667276
+2025-07-22 12:14:27 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.logout | Args: [valid.jwt.token] | Timestamp: 1753166667568
+2025-07-22 12:14:28 INFO  AUDIT_LOGGER - [AUDIT] Method: AuthenticationServiceImpl.login | Args: [com.yash.usermanagement.dto.LoginRequestDTO@38bfb336] | Timestamp: 1753166668023

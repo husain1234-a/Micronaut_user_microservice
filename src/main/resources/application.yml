@@ -80,6 +80,12 @@ micronaut:
         step: PT1M
         descriptions: true
         path: /prometheus
+  management:
+    endpoints:
+      metrics:
+        enabled: true
+        sensitive: false
+        path: /metrics
   binders:
     files:
       enabled: true
@@ -92,15 +98,15 @@ logger:
     io.micronaut.security.rules: TRACE
     com.yash.usermanagement: DEBUG
 
-#consul:
-#  client:
-#    host: localhost
-#    port: 8500
-#    registration:
-#      enabled: true
-#    discovery:
-#      enabled: true
-#    defaultZone: "${CONSUL_HOST:localhost}:${CONSUL_PORT:8500}"
+consul:
+ client:
+   host: localhost
+   port: 8500
+   registration:
+     enabled: true
+   discovery:
+     enabled: true
+   defaultZone: "${CONSUL_HOST:localhost}:${CONSUL_PORT:8500}"
  
 # DynamoDB Configuration
 dynamodb:
@@ -139,6 +145,15 @@ r2dbc:
       password: admin123
       pool:
         enabled: true
+
+# --- ADD THIS BLOCK FOR HEALTH CHECKS ---
+health:
+    enabled: true
+    endpoints:
+      enabled: true
+      details-visible: ANONYMOUS
+      sensitive: false
+      path: /health
 
 caches:
   users-all:

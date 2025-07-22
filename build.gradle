@@ -81,6 +81,8 @@ dependencies {
 //    implementation("io.micronaut.configuration:micronaut-micrometer-core")
     implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
 
+    // dependency for micronaut health
+    runtimeOnly("io.micronaut:micronaut-management:4.9.8")
 
     // test case 
     testImplementation("io.micronaut.test:micronaut-test-junit5")
